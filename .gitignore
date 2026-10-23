@@ -1,0 +1,20 @@
+# React
+node_modules/
+dist/
+
+# Spring Boot
+.gradle/
+build/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 환경변수 및 개인 설정
+.env
+.env.*
+application-local.properties
+application-local.yml
+.DS_Store
