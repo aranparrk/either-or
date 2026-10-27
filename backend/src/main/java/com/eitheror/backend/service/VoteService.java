@@ -13,8 +13,10 @@ import com.eitheror.backend.repository.PollRepository;
 import com.eitheror.backend.repository.VoteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -35,12 +37,25 @@ public class VoteService {
         Optional<Poll> poll = pollRepository.findById(pollId);
 
         if (poll.isEmpty()) {
-            throw new IllegalStateException("해당 투표가 존재하지 않습니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "해당 투표가 존재하지 않습니다."
+            );
         }
 
         // 마감된 투표인지 확인
         if (!poll.get().getDeadline().isAfter(LocalDateTime.now())) {
-            throw new IllegalArgumentException("마감 된 투표입니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "마감된 투표입니다."
+            );
+        }
+
+        if (voteCreateReqDto.getOptionId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "선택지 ID를 입력해주세요."
+            );
         }
 
         // 선택지 유효성 검사
@@ -48,25 +63,37 @@ public class VoteService {
                 pollOptionRepository.findById(voteCreateReqDto.getOptionId());
 
         if (option.isEmpty()) {
-            throw new IllegalArgumentException("존재하지 않는 선택지 입니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "존재하지 않는 선택지입니다."
+            );
         }
 
         if (!option.get().getPoll().getPollId().equals(pollId)) {
-            throw new IllegalArgumentException("해당 투표의 선택지가 아닙니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "해당 투표의 선택지가 아닙니다."
+            );
         }
 
         // 회원 존재 여부 검사
         Optional<Member> member = memberRepository.findById(1L);
 
-        if  (member.isEmpty()) {
-            throw new IllegalArgumentException("회원이 존재하지 않습니다.");
+        if (member.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "회원이 존재하지 않습니다."
+            );
         }
 
         // 중복 투표 검사
         Optional<Vote> vote = voteRepository.findByMember_MemberIdAndPoll_PollId(1L, pollId);
 
-        if (!vote.isEmpty()) {
-            throw new IllegalArgumentException("이미 참여한 투표입니다.");
+        if (vote.isPresent()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "이미 참여한 투표입니다."
+            );
         }
 
         // 투표 결과 저장
