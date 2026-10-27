@@ -83,3 +83,7 @@ CREATE TABLE comments (
 	FOREIGN KEY (member_id) REFERENCES member(member_id),
 	FOREIGN KEY (poll_id) REFERENCES polls(poll_id)
 )
+
+-- 프로필 아이디 추가
+ALTER TABLE members
+ADD COLUMN profile_image_id INT NOT NULL DEFAULT 1;
