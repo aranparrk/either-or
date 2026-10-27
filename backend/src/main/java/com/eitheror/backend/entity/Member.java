@@ -30,6 +30,10 @@ public class Member {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    // 사용자가 선택한 프로필 번호를 저장하기 위해 Integer 타입으로 profileId 추가
+    @Column(name = "profile_image_id")
+    private Integer profileId;
+
     @Column(name = "reg_date", updatable = false)
     private LocalDateTime regDate;
 
