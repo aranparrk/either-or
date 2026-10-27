@@ -11,8 +11,10 @@ import com.eitheror.backend.repository.PollRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -50,7 +52,10 @@ public class PollService {
         Optional<Poll> poll = pollRepository.findById(pollId);
 
         if (poll.isEmpty()) {
-            throw new IllegalArgumentException("해당 투표가 존재하지 않습니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "해당 투표가 존재하지 않습니다."
+            );
         }
 
         return toDetailDto(poll.get());
@@ -62,28 +67,43 @@ public class PollService {
         // 선택지는 반드시 2개
         if (pollCreateReqDto.getOptions() == null
                 || pollCreateReqDto.getOptions().size() != 2) {
-            throw new IllegalArgumentException("선택지는 반드시 2개여야 합니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "선택지는 반드시 2개여야 합니다."
+            );
         }
 
         // 선택지 내용 검사
         for (String option : pollCreateReqDto.getOptions()) {
             if (option == null || option.isBlank()) {
-                throw new IllegalArgumentException("선택지 내용을 입력해주세요.");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "선택지 내용을 입력해주세요."
+                );
             }
 
             if (option.length() > 255) {
-                throw new IllegalArgumentException("선택지는 255자 이하로 입력해주세요.");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "선택지는 255자 이하로 입력해주세요."
+                );
             }
         }
 
         // 마감일시 필수 입력 검사
         if (pollCreateReqDto.getDeadline() == null) {
-            throw new IllegalArgumentException("마감일시를 입력해주세요.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "마감일시를 입력해주세요."
+            );
         }
 
         // 마감일시는 현재보다 미래여야 함
         if (!pollCreateReqDto.getDeadline().isAfter(LocalDateTime.now())) {
-            throw new IllegalArgumentException("마감일시는 현재 이후로 설정해야 합니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "마감일시는 현재 이후로 설정해야 합니다."
+            );
         }
 
         // 제목 또는 내용 빈문자열 검사
@@ -92,19 +112,28 @@ public class PollService {
                 || pollCreateReqDto.getContent() == null
                 || pollCreateReqDto.getContent().isBlank()) {
 
-            throw new IllegalArgumentException("제목 또는 내용을 입력해주세요.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "제목 또는 내용을 입력해주세요."
+            );
         }
 
         // 제목 길이 검사
         if (pollCreateReqDto.getTitle().length() > 200) {
-            throw new IllegalArgumentException("제목은 200자 이하로 입력해주세요.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "제목은 200자 이하로 입력해주세요."
+            );
         }
 
         // TODO: 로그인 연동 후 작성자 조회 방식 변경
         Optional<Member> member = memberRepository.findById(1L);
 
         if (member.isEmpty()) {
-            throw new IllegalArgumentException("회원이 존재하지 않습니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "회원이 존재하지 않습니다."
+            );
         }
 
         // 게시글 Entity 생성
