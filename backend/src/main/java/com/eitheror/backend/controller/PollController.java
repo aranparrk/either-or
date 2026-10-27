@@ -1,5 +1,7 @@
 package com.eitheror.backend.controller;
 
+import com.eitheror.backend.dto.PollCreateReqDto;
+import com.eitheror.backend.dto.PollCreateResDto;
 import com.eitheror.backend.dto.PollDetailResDto;
 import com.eitheror.backend.dto.PollListResDto;
 import com.eitheror.backend.service.PollService;
@@ -7,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +37,21 @@ public class PollController {
         try {
             return ResponseEntity.ok(pollService.getPollDetail(id));
         } catch (IllegalArgumentException e) {
+            log.warn("투표 상세 조회 실패 : {}", e.getMessage());
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @Operation(summary = "투표 등록", description = "투표를 등록합니다.")
+    @PostMapping
+    public ResponseEntity<PollCreateResDto> createPoll(
+            @RequestBody PollCreateReqDto pollCreateReqDto) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(pollService.createPoll(pollCreateReqDto));
+        } catch (IllegalArgumentException e) {
+            log.warn("투표 등록 실패 : {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
 }
