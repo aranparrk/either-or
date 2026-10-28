@@ -17,3 +17,4 @@ public class CommentCreateReqDto {
     @Size(max = 1000, message = "댓글은 최대 1000자까지 입력 가능합니다.")
     private String content;
 }
+
