@@ -24,3 +24,4 @@ public class CommentResDto {
         this.regDate = comment.getRegDate();
     }
 }
+
