@@ -26,7 +26,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/votes", "/api/votes/**")
+                        .ignoringRequestMatchers(
+                                "/api/votes",
+                                "/api/votes/**",
+                                "/api/auth/**"
+                        )
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -34,7 +38,8 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/api/votes",
-                                "/api/votes/**"
+                                "/api/votes/**",
+                                "/api/auth/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
