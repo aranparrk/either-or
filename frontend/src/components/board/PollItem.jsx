@@ -4,10 +4,12 @@ import styled from "styled-components";
 const Item = styled.li`
   display: flex;
   flex-direction: column;
+  width: 200px;
+  height: 100px;
   gap: 6px;
   padding: 16px 20px;
-  background-color: white;
-  border-radius: 12px;
+  background-color: rgb(250, 250, 250);
+  border-radius: 10px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: transform 0.1s;
@@ -34,7 +36,7 @@ const Meta = styled.div`
 `;
 
 // 부모(BoardList)로부터 게시글 데이터(board)와 클릭 핸들러(onClick)를 props로 받음
-const BoardItem = ({ board, onClick }) => {
+const PollItem = ({ board, onClick }) => {
   return (
     <Item onClick={() => onClick(board.boardId)}>
       <Title>{board.title}</Title>
@@ -46,4 +48,4 @@ const BoardItem = ({ board, onClick }) => {
   );
 };
 
-export default BoardItem;
+export default PollItem;
