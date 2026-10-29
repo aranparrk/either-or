@@ -1,6 +1,5 @@
 package com.eitheror.backend.service;
 
-import com.eitheror.backend.dto.PollDetailResDto;
 import com.eitheror.backend.dto.VoteCreateReqDto;
 import com.eitheror.backend.dto.VoteResDto;
 import com.eitheror.backend.entity.Member;
@@ -32,7 +31,7 @@ public class VoteService {
     private final VoteRepository voteRepository;
 
     // 투표 참여
-    public VoteResDto createVote(Long pollId, VoteCreateReqDto voteCreateReqDto) {
+    public VoteResDto createVote(Long pollId, VoteCreateReqDto voteCreateReqDto, long memberId) {
         // 투표 게시물이 있는지 확인
         Optional<Poll> poll = pollRepository.findById(pollId);
 
@@ -77,7 +76,7 @@ public class VoteService {
         }
 
         // 회원 존재 여부 검사
-        Optional<Member> member = memberRepository.findById(1L);
+        Optional<Member> member = memberRepository.findById(memberId);
 
         if (member.isEmpty()) {
             throw new ResponseStatusException(
@@ -87,7 +86,7 @@ public class VoteService {
         }
 
         // 중복 투표 검사
-        Optional<Vote> vote = voteRepository.findByMember_MemberIdAndPoll_PollId(1L, pollId);
+        Optional<Vote> vote = voteRepository.findByMember_MemberIdAndPoll_PollId(memberId, pollId);
 
         if (vote.isPresent()) {
             throw new ResponseStatusException(
@@ -109,7 +108,78 @@ public class VoteService {
 
     }
 
-    public VoteResDto toDto(Vote vote) {
+    // 선택 변경
+    public VoteResDto updateVote(Long pollId, VoteCreateReqDto voteCreateReqDto, long memberId) {
+        // 투표 게시물이 있는지 확인
+        Optional<Poll> poll = pollRepository.findById(pollId);
+
+        if (poll.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "해당 투표가 존재하지 않습니다."
+            );
+        }
+
+        // 마감된 투표인지 확인
+        if (!poll.get().getDeadline().isAfter(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "마감된 투표입니다."
+            );
+        }
+
+        if (voteCreateReqDto.getOptionId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "선택지 ID를 입력해주세요."
+            );
+        }
+
+        // 선택지 유효성 검사
+        Optional<PollOption> option =
+                pollOptionRepository.findById(voteCreateReqDto.getOptionId());
+
+        if (option.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "존재하지 않는 선택지입니다."
+            );
+        }
+
+        if (!option.get().getPoll().getPollId().equals(pollId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "해당 투표의 선택지가 아닙니다."
+            );
+        }
+
+        // 회원 존재 여부 검사
+        Optional<Member> member = memberRepository.findById(memberId);
+
+        if (member.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "회원이 존재하지 않습니다."
+            );
+        }
+
+        // 중복 투표 검사
+        Optional<Vote> vote = voteRepository.findByMember_MemberIdAndPoll_PollId(memberId, pollId);
+
+        if (vote.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "참여하지 않은 투표입니다."
+            );
+        }
+
+        Vote updateVote = vote.get();
+        updateVote.setPollOption(option.get());
+
+        return toDto(updateVote);
+    }
+
+    private VoteResDto toDto(Vote vote) {
         VoteResDto voteResDto = new VoteResDto();
         voteResDto.setVoteId(vote.getVoteId());
         voteResDto.setPollId(vote.getPoll().getPollId());
