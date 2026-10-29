@@ -22,13 +22,16 @@ public class CommentService {
     private final PollRepository pollRepository;
 
     @Transactional
-    public CommentResDto createComment(Long memberId, CommentCreateReqDto requestDto) {
+    public CommentResDto createComment(
+            Long memberId,
+            Long pollId,
+            CommentCreateReqDto requestDto) {
         // 1. 회원 조회 검증
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
 
         // 2. 투표 게시글 조회 검증
-        Poll poll = pollRepository.findById(requestDto.getPollId())
+        Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 투표입니다."));
 
         // 3. 댓글 엔티티 생성 및 연관관계 설정
