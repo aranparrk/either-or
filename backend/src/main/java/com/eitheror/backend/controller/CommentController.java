@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Tag(name = "댓글 API", description = "댓글 작성, 댓글 조회")
 @Slf4j
 @RestController
@@ -43,5 +45,12 @@ public class CommentController {
                 commentService.createComment(memberId, id, requestDto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+    }
+
+    @Operation(summary = "댓글 조회", description = "댓글을 조회힙나다")
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<List<CommentResDto>> getComment(@PathVariable Long id) {
+        return ResponseEntity.ok(commentService.getCommentList(id));
+
     }
 }
