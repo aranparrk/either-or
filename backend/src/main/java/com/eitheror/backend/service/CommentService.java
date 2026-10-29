@@ -9,8 +9,14 @@ import com.eitheror.backend.repository.CommentRepository;
 import com.eitheror.backend.repository.MemberRepository;
 import com.eitheror.backend.repository.PollRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,13 +28,16 @@ public class CommentService {
     private final PollRepository pollRepository;
 
     @Transactional
-    public CommentResDto createComment(Long memberId, CommentCreateReqDto requestDto) {
+    public CommentResDto createComment(
+            Long memberId,
+            Long pollId,
+            CommentCreateReqDto requestDto) {
         // 1. 회원 조회 검증
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
 
         // 2. 투표 게시글 조회 검증
-        Poll poll = pollRepository.findById(requestDto.getPollId())
+        Poll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 투표입니다."));
 
         // 3. 댓글 엔티티 생성 및 연관관계 설정
@@ -40,6 +49,27 @@ public class CommentService {
         // 4. 저장 후 응답 DTO로 변환 반환
         Comment savedComment = commentRepository.save(comment);
         return new CommentResDto(savedComment);
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<CommentResDto> getCommentList(Long pollId) {
+        boolean pollExists = pollRepository.existsById(pollId);
+
+        if (!pollExists) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "게시글이 존재하지 않습니다."
+            );
+        }
+
+        List<Comment> comments = commentRepository.findByPoll_PollIdOrderByRegDateAsc(pollId);
+        List<CommentResDto> commentResDtos = new ArrayList<>();
+        for (Comment comment : comments) {
+            commentResDtos.add(new CommentResDto(comment));
+        }
+
+        return commentResDtos;
     }
 }
 
