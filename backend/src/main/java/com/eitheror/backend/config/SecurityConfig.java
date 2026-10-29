@@ -39,7 +39,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/votes",
                                 "/api/votes/**",
-                                "/api/auth/**"
+                                "/api/auth/**",
+                                "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );

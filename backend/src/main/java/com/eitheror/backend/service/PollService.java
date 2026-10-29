@@ -62,7 +62,7 @@ public class PollService {
     }
 
     // 투표 등록
-    public PollCreateResDto createPoll(PollCreateReqDto pollCreateReqDto) {
+    public PollCreateResDto createPoll(PollCreateReqDto pollCreateReqDto, Long memberId) {
 
         // 선택지는 반드시 2개
         if (pollCreateReqDto.getOptions() == null
@@ -127,7 +127,7 @@ public class PollService {
         }
 
         // TODO: 로그인 연동 후 작성자 조회 방식 변경
-        Optional<Member> member = memberRepository.findById(1L);
+        Optional<Member> member = memberRepository.findById(memberId);
 
         if (member.isEmpty()) {
             throw new ResponseStatusException(

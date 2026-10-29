@@ -3,9 +3,11 @@ package com.eitheror.backend.repository;
 
 import com.eitheror.backend.entity.Vote;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+@Repository
 public interface VoteRepository extends JpaRepository<Vote, Long> {
 
     // 특정 회원의 투표 기록 조회
