@@ -85,5 +85,5 @@ CREATE TABLE comments (
 )
 
 -- 프로필 아이디 추가
-ALTER TABLE members
+ALTER TABLE member
 ADD COLUMN profile_image_id INT NOT NULL DEFAULT 1;
