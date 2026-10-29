@@ -1,11 +1,11 @@
 import styled, { css } from "styled-components";
 
 const btnSizes = {
-  // 로그인, 회원가입 버튼 스타일
+  // 로그인, 회원가입 버튼
   long: css`
     width: 100%;
   `,
-  // 투표등록, 댓글등록 버튼 스타일
+  // 투표등록, 댓글등록 버튼
   short: css`
     width: 100px;
   `,
@@ -26,9 +26,8 @@ const StyledBtn = styled.button`
   || btnSizes.long : 버튼 size 값에 long, short가 아닌 다른 값이 들어왔을 때에도 long 스타일을 적용 */
   ${({ $size }) => btnSizes[$size] || btnSizes.long}
 
-  /* 등록 버튼, enabled가 true면 활성화 되는 버튼 스타일 */
-  ${({ $cancel, $enabled }) =>
-    !$cancel &&
+  /* enabled가 true면 활성화 되는 버튼 스타일 */
+  ${({ $enabled }) =>
     $enabled &&
     css`
       background-color: rgb(75, 79, 82);
@@ -38,34 +37,21 @@ const StyledBtn = styled.button`
         background-color: rgb(55, 59, 62);
       }
     `}
-  
-  /* 취소 버튼 */
-  ${({ $cancel }) =>
-    $cancel &&
-    css`
-      width: 100px;
-      border: 1px solid rgb(55, 59, 62);
-      background-color: white;
-      color: rgb(55, 59, 62);
-      cursor: pointer;
-    `}
 `;
 
 const Button = ({
-  type = "button",
-  size = "long",
-  enabled = false,
-  cancel = false,
+  enabled,
   onClick,
   children,
+  type = "button",
+  size = "long",
 }) => {
   return (
     <StyledBtn
       type={type}
-      $size={size}
       $enabled={enabled}
-      $cancel={cancel}
-      disabled={!cancel && !enabled}
+      $size={size}
+      disabled={!enabled}
       onClick={onClick}
     >
       {children}
