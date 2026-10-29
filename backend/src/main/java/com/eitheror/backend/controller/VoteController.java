@@ -3,6 +3,7 @@ package com.eitheror.backend.controller;
 
 import com.eitheror.backend.dto.VoteCreateReqDto;
 import com.eitheror.backend.dto.VoteResDto;
+import com.eitheror.backend.dto.VoteResultResDto;
 import com.eitheror.backend.service.VoteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -58,5 +59,20 @@ public class VoteController {
 
         return ResponseEntity.ok(
                 voteService.updateVote(id, dto, memberId));
+    }
+
+    @Operation(summary = "투표 결과 조회", description = "투표 결과를 조회합니다.")
+    @GetMapping("/{id}/results")
+    public ResponseEntity<VoteResultResDto> getVoteResult(@PathVariable Long id,
+                                                          HttpSession session) {
+        Long memberId = (Long) session.getAttribute("LOGIN_MEMBER_ID");
+        if (memberId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "로그인이 필요합니다."
+            );
+        }
+
+        return ResponseEntity.ok(voteService.getVoteResult(id, memberId));
     }
 }

@@ -1,7 +1,9 @@
 package com.eitheror.backend.service;
 
 import com.eitheror.backend.dto.VoteCreateReqDto;
+import com.eitheror.backend.dto.VoteOptionResultResDto;
 import com.eitheror.backend.dto.VoteResDto;
+import com.eitheror.backend.dto.VoteResultResDto;
 import com.eitheror.backend.entity.Member;
 import com.eitheror.backend.entity.Poll;
 import com.eitheror.backend.entity.PollOption;
@@ -18,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -179,6 +183,65 @@ public class VoteService {
         return toDto(updateVote);
     }
 
+    // 투표 결과 조회
+    @Transactional(readOnly = true)
+    public VoteResultResDto getVoteResult(Long pollId, Long memberId) {
+        Optional<Poll> poll = pollRepository.findById(pollId);
+        if (poll.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "해당 투표가 존재하지 않습니다."
+            );
+        }
+
+        Optional<Vote> vote = voteRepository.findByMember_MemberIdAndPoll_PollId(memberId, pollId);
+
+        if (vote.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "투표에 참여한 적이 없는 사용자입니다."
+            );
+        }
+
+        long totalVotes = voteRepository.countByPoll_PollId(pollId);
+
+        List<PollOption> pollOptions = pollOptionRepository.findByPoll_PollId(pollId);
+
+
+
+        // 선택지별 결과를 담을 리스트
+        List<VoteOptionResultResDto> optionResults = new ArrayList<>();
+
+        for (PollOption option : pollOptions) {
+            long voteCount = voteRepository.countByPoll_PollIdAndPollOption_OptionId(
+                    pollId,
+                    option.getOptionId()
+            );
+
+            double percentage = totalVotes == 0
+                    ? 0.0
+                    : (double) voteCount / totalVotes * 100;
+
+            // 현재 선택지의 결과 DTO 생성
+            VoteOptionResultResDto optionDto = new VoteOptionResultResDto();
+
+            optionDto.setOptionId(option.getOptionId());
+            optionDto.setVoteCount(voteCount);
+            optionDto.setPercentage(percentage);
+
+            // 리스트에 추가
+            optionResults.add(optionDto);
+        }
+        // 최종 결과 DTO 생성
+        VoteResultResDto resultDto = new VoteResultResDto();
+
+        resultDto.setPollId(pollId);
+        resultDto.setTotalVotes(totalVotes);
+        resultDto.setOptions(optionResults);
+
+        return resultDto;
+    }
+
     private VoteResDto toDto(Vote vote) {
         VoteResDto voteResDto = new VoteResDto();
         voteResDto.setVoteId(vote.getVoteId());
@@ -187,6 +250,4 @@ public class VoteService {
 
         return voteResDto;
     }
-
-
 }
