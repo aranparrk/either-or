@@ -163,17 +163,42 @@ const PollDetail = () => {
   const [poll, setPoll] = useState(null);
   const [selectedOptionId, setSelectedOptionId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [result, setResult] = useState(null);
+  const [resultError, setResultError] = useState("");
 
   useEffect(() => {
     setPoll(null);
     setSelectedOptionId(null);
+    setResult(null);
+    setResultError("");
 
     AxiosApi.pollDetail(id)
       .then((response) => {
-        setPoll(response.data);
+        const pollData = response.data;
+        setPoll(pollData);
+
+        const isClosed = new Date(pollData.deadline) <= new Date();
+
+        if (isClosed) {
+          AxiosApi.voteResult(id)
+            .then((response) => {
+              setResult(response.data);
+            })
+            .catch((error) => {
+              console.error("투표 결과 조회 실패:", error);
+
+              if (error.response?.status === 401) {
+                setResultError("로그인이 필요합니다.");
+              } else if (error.response?.status === 403) {
+                setResultError("투표 결과 조회 권한이 없습니다.");
+              } else {
+                setResultError("투표 결과를 불러오지 못했습니다.");
+              }
+            });
+        }
       })
       .catch((error) => {
-        console.error("투표 상세 조회 실패 : ", error);
+        console.error("투표 상세 조회 실패:", error);
       });
   }, [id]);
 
@@ -229,41 +254,57 @@ const PollDetail = () => {
       </PollHeader>
 
       <VoteSection>
-        <SectionTitle>투표하기</SectionTitle>
+        <SectionTitle>{isClosed ? "투표 결과" : "투표하기"}</SectionTitle>
 
-        {(poll.options ?? []).map((option) => (
-          <OptionLabel
-            key={option.optionId}
-            $selected={selectedOptionId === option.optionId}
-          >
-            <input
-              type="radio"
-              name="pollOption"
-              value={option.optionId}
-              checked={selectedOptionId === option.optionId}
-              disabled={isClosed}
-              onChange={() => setSelectedOptionId(option.optionId)}
-            />
-            {option.content}
-          </OptionLabel>
-        ))}
+        {isClosed ? (
+          result ? (
+            <>
+              <p>총 {result.totalVotes}표</p>
 
-        <VoteButton
-          disabled={selectedOptionId === null || isClosed || isSubmitting}
-          onClick={handleVote}
-        >
-          {isClosed
-            ? "마감된 투표입니다"
-            : isSubmitting
-            ? "처리 중..."
-            : "투표하기"}
-        </VoteButton>
+              {(poll.options ?? []).map((option) => {
+                const optionResult = result.options.find(
+                  (item) => item.optionId === option.optionId
+                );
 
-        <Notice>
-          {isClosed
-            ? "마감된 투표는 참여할 수 없습니다."
-            : "투표 기능은 다음 단계에서 연결할 예정입니다."}
-        </Notice>
+                return (
+                  <div key={option.optionId}>
+                    <p>
+                      {option.content} : {optionResult?.voteCount ?? 0}표 (
+                      {optionResult?.percentage ?? 0}%)
+                    </p>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            <Notice>{resultError || "투표 결과를 불러오는 중..."}</Notice>
+          )
+        ) : (
+          <>
+            {(poll.options ?? []).map((option) => (
+              <OptionLabel
+                key={option.optionId}
+                $selected={selectedOptionId === option.optionId}
+              >
+                <input
+                  type="radio"
+                  name="pollOption"
+                  value={option.optionId}
+                  checked={selectedOptionId === option.optionId}
+                  onChange={() => setSelectedOptionId(option.optionId)}
+                />
+                {option.content}
+              </OptionLabel>
+            ))}
+
+            <VoteButton
+              disabled={selectedOptionId === null || isSubmitting}
+              onClick={handleVote}
+            >
+              {isSubmitting ? "처리 중..." : "투표하기"}
+            </VoteButton>
+          </>
+        )}
       </VoteSection>
 
       <CommentSection>
