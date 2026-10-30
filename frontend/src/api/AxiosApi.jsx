@@ -68,6 +68,11 @@ const AxiosApi = {
       optionId,
     });
   },
+
+  // 투표 결과 조회 (GET)
+  voteResult: async (pollId) => {
+    return await api.get(`/api/votes/${pollId}/results`);
+  },
 };
 
 export default AxiosApi;
