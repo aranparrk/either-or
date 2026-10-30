@@ -73,6 +73,22 @@ const AxiosApi = {
   voteResult: async (pollId) => {
     return await api.get(`/api/votes/${pollId}/results`);
   },
+
+  // ====================================
+  // 투표 게시글 API
+  // ====================================
+
+  // 댓글 목록 조회 (GET)
+  commentList: async (pollId) => {
+    return await api.get(`/api/votes/${pollId}/comments`);
+  },
+
+  // 댓글 등록 (POST)
+  commentCreate: async (pollId, content) => {
+    return await api.post(`/api/votes/${pollId}/comments`, {
+      content,
+    });
+  },
 };
 
 export default AxiosApi;
