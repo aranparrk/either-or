@@ -15,7 +15,6 @@ const StyledInput = styled.input`
   }
 `;
 
-// type을 props로 받아야 비밀번호 칸을 type="password"로 쓸 수 있음
 const Input = ({ type = "text", value, onChange, placeholder }) => {
   return (
     <StyledInput

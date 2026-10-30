@@ -11,6 +11,34 @@ const api = axios.create({
 
 const AxiosApi = {
   // ====================================
+  // 로그인 API
+  // ====================================
+
+  // 회원가입여부확인(GET)
+  memberExist: async (email) => {
+    return await api.get(`/api/auth/exists/${email}`);
+  },
+
+  // 회원가입(POST)
+  memberSignup: async (email, pwd, profileId) => {
+    return await api.post("/api/auth/signup", {
+      email,
+      pwd,
+      profileId,
+    });
+  },
+
+  // 로그인(POST)
+  memberLogin: async (email, pwd) => {
+    return await api.post("/api/auth/login", { email, pwd });
+  },
+
+  // 로그아웃(POST)
+  memberLogout: async () => {
+    return await api.post("/api/auth/logout");
+  },
+
+  // ====================================
   // 투표 게시글 API
   // ====================================
 
