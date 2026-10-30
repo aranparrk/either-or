@@ -1,59 +1,60 @@
 import { useState, useEffect } from "react";
 import AxiosApi from "../api/AxiosApi";
 import styled from "styled-components";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Button from "../components/common/Button";
+import PollItem from "../components/poll/PollItem";
 
-const PollCard = styled(Link)`
-  display: block;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 12px;
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
+// 페이지 전체 영역
+const PageContainer = styled.div`
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  box-sizing: border-box;
+  text-align: left;
 
-  &:hover {
-    border-color: #888;
+  @media (max-width: 768px) {
+    padding: 32px 16px 48px;
   }
 `;
 
-const PollTitle = styled.h3`
-  text-align: left;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow-wrap: anywhere;
-`;
-
-const PageContainer = styled.main`
-  width: 100%;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 32px 24px;
-  box-sizing: border-box;
-  text-align: left;
-`;
-
+// 페이지 상단
 const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  gap: 20px;
+  margin-bottom: 32px;
+
+  @media (max-width: 600px) {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
 `;
 
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
+const PageTitle = styled.h2`
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #222;
+`;
 
-  background-color: ${({ $closed }) => ($closed ? "#3f4146" : "#194b3b")};
+const PageDescription = styled.p`
+  margin: 0;
+  font-size: 14px;
+  color: #888;
+`;
 
-  color: ${({ $closed }) => ($closed ? "#cbd5e1" : "#a7f3d0")};
+// 투표 카드 목록
+const PollGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const PollList = () => {
@@ -73,22 +74,21 @@ const PollList = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <h2>투표 목록</h2>
+        <div>
+          <PageTitle>투표 목록</PageTitle>
+          <PageDescription>당신의 선택을 기다리는 다양한 투표</PageDescription>
+        </div>
+
         <Button size="short" enabled={true} onClick={() => nav("/votes/new")}>
           투표 등록
         </Button>
       </PageHeader>
-      {polls.map((poll) => (
-        <PollCard key={poll.pollId} to={`/votes/${poll.pollId}`}>
-          <StatusBadge $closed={new Date(poll.deadline) <= new Date()}>
-            {new Date(poll.deadline) > new Date() ? "진행 중" : "마감"}
-          </StatusBadge>
 
-          <PollTitle>{poll.title}</PollTitle>
-
-          <p>마감일: {new Date(poll.deadline).toLocaleString("ko-KR")}</p>
-        </PollCard>
-      ))}
+      <PollGrid>
+        {polls.map((poll) => (
+          <PollItem key={poll.pollId} poll={poll} />
+        ))}
+      </PollGrid>
     </PageContainer>
   );
 };

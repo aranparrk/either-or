@@ -194,13 +194,28 @@ public class VoteService {
             );
         }
 
-        Optional<Vote> vote = voteRepository.findByMember_MemberIdAndPoll_PollId(memberId, pollId);
+        // 마감 여부 확인
+        boolean isClosed = !poll.get().getDeadline().isAfter(LocalDateTime.now());
 
-        if (vote.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "투표에 참여한 적이 없는 사용자입니다."
-            );
+        // 진행 중인 투표일 때만 참여 여부 확인
+        if (!isClosed) {
+
+            if (memberId == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "로그인이 필요합니다."
+                );
+            }
+
+            Optional<Vote> vote =
+                    voteRepository.findByMember_MemberIdAndPoll_PollId(memberId, pollId);
+
+            if (vote.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "투표에 참여한 적이 없는 사용자입니다."
+                );
+            }
         }
 
         long totalVotes = voteRepository.countByPoll_PollId(pollId);

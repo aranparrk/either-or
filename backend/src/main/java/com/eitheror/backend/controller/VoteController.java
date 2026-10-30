@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/votes")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class VoteController {
     private final VoteService voteService;
 
@@ -63,16 +63,14 @@ public class VoteController {
 
     @Operation(summary = "투표 결과 조회", description = "투표 결과를 조회합니다.")
     @GetMapping("/{id}/results")
-    public ResponseEntity<VoteResultResDto> getVoteResult(@PathVariable Long id,
-                                                          HttpSession session) {
-        Long memberId = (Long) session.getAttribute("LOGIN_MEMBER_ID");
-        if (memberId == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED,
-                    "로그인이 필요합니다."
-            );
-        }
+    public ResponseEntity<VoteResultResDto> getVoteResult(
+            @PathVariable Long id,
+            HttpSession session) {
 
-        return ResponseEntity.ok(voteService.getVoteResult(id, memberId));
+        Long memberId = (Long) session.getAttribute("LOGIN_MEMBER_ID");
+
+        return ResponseEntity.ok(
+                voteService.getVoteResult(id, memberId)
+        );
     }
 }
