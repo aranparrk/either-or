@@ -161,38 +161,21 @@ const PollDetail = () => {
   const { id } = useParams();
 
   const [poll, setPoll] = useState(null);
-  const [error, setError] = useState(false);
   const [selectedOptionId, setSelectedOptionId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    let active = true;
-
     setPoll(null);
-    setError(false);
     setSelectedOptionId(null);
 
     AxiosApi.pollDetail(id)
       .then((response) => {
-        if (active) {
-          setPoll(response.data);
-        }
+        setPoll(response.data);
       })
       .catch((error) => {
-        if (active) {
-          console.error("투표 상세 조회 실패 : ", error);
-          setError(true);
-        }
+        console.error("투표 상세 조회 실패 : ", error);
       });
-
-    return () => {
-      active = false;
-    };
   }, [id]);
-
-  if (error) {
-    return <PageContainer>투표 정보를 불러오지 못했습니다.</PageContainer>;
-  }
 
   if (!poll) {
     return <PageContainer>로딩 중...</PageContainer>;
