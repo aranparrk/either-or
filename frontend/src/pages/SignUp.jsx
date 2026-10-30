@@ -17,10 +17,10 @@ const PWD_REGEX =
 const Container = styled.div`
   display: flex;
   box-sizing: border-box;
-  min-height: 100vh;
+  width: 100%;
+  flex: 1;
   justify-content: center;
   align-items: center;
-  padding: 0 30px;
 `;
 
 const Form = styled.form`
@@ -45,6 +45,7 @@ const Title = styled.h1`
 const Field = styled.div`
   display: flex;
   flex-direction: column;
+  width: 100%;
 `;
 
 // 입력창 오른쪽 하단 메시지. 높이를 고정해 메시지가 생겨도 레이아웃이 흔들리지 않음
