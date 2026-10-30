@@ -61,6 +61,13 @@ const AxiosApi = {
       deadline,
     });
   },
+
+  // 투표 참여 (POST)
+  voteCreate: async (id, optionId) => {
+    return await api.post(`/api/votes/${id}/choices`, {
+      optionId,
+    });
+  },
 };
 
 export default AxiosApi;
