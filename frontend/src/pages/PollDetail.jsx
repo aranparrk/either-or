@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import AxiosApi from "../api/AxiosApi";
 import styled from "styled-components";
+import CommentItem from "../components/comment/CommentItem";
+import Button from "../components/common/Button";
 
 const PageContainer = styled.div`
   width: 100%;
@@ -151,10 +153,18 @@ const CommentInput = styled.textarea`
   font: inherit;
   font-size: 14px;
   resize: vertical;
+  margin-top: 20px;
 
   &:disabled {
     background-color: #f9f9f9;
   }
+`;
+
+const ButtonRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  margin-bottom: 32px;
 `;
 
 const PollDetail = () => {
@@ -165,6 +175,8 @@ const PollDetail = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [resultError, setResultError] = useState("");
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
 
   useEffect(() => {
     setPoll(null);
@@ -202,6 +214,16 @@ const PollDetail = () => {
       });
   }, [id]);
 
+  useEffect(() => {
+    AxiosApi.commentList(id)
+      .then((response) => {
+        setComments(response.data);
+      })
+      .catch((error) => {
+        console.error("댓글 목록 조회 실패:", error);
+      });
+  }, [id]);
+
   if (!poll) {
     return <PageContainer>로딩 중...</PageContainer>;
   }
@@ -232,6 +254,31 @@ const PollDetail = () => {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCommentCreate = async () => {
+    if (commentText.trim() === "") {
+      alert("댓글을 입력해주세요.");
+      return;
+    }
+
+    try {
+      await AxiosApi.commentCreate(id, commentText);
+
+      alert("댓글이 등록되었습니다.");
+      setCommentText("");
+
+      const response = await AxiosApi.commentList(id);
+      setComments(response.data);
+    } catch (error) {
+      console.error("댓글 등록 실패:", error);
+
+      if (error.response?.status === 401) {
+        alert("로그인이 필요합니다.");
+      } else {
+        alert("댓글 등록에 실패했습니다.");
+      }
     }
   };
 
@@ -309,11 +356,24 @@ const PollDetail = () => {
 
       <CommentSection>
         <SectionTitle>댓글</SectionTitle>
+        {comments.length === 0 ? (
+          <Notice>아직 댓글이 없습니다.</Notice>
+        ) : (
+          comments.map((comment) => (
+            <CommentItem key={comment.commentId} comment={comment} />
+          ))
+        )}
         <CommentInput
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
           placeholder="이 질문에 대한 생각을 남겨주세요."
-          disabled
         />
-        <Notice>댓글 기능은 아직 연결되지 않았습니다.</Notice>
+
+        <ButtonRow>
+          <Button enabled={true} size="short" onClick={handleCommentCreate}>
+            댓글 등록
+          </Button>
+        </ButtonRow>
       </CommentSection>
     </PageContainer>
   );
