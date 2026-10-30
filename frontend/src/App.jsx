@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 
+
 import MainLayout from "./layouts/MainLayout.jsx";
 
 // import Login from "./pages/Login.jsx";
@@ -11,6 +12,7 @@ import PollCreate from "./pages/PollCreate.jsx";
 function App() {
   return (
     <Routes>
+
       <Route element={<MainLayout />}>
         <Route path="/" element={<PollList />} />
         {/* <Route path="/login" element={<Login />} />
@@ -18,6 +20,7 @@ function App() {
         <Route path="/votes/new" element={<PollCreate />} />
         <Route path="/votes/:id" element={<PollDetail />} />
       </Route>
+
     </Routes>
   );
 }
