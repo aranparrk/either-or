@@ -23,7 +23,17 @@ const Container = styled.div`
   align-items: center;
 `;
 
-const Form = styled.form`
+const Form1 = styled.div`
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  gap: 4px;
+  align-items: flex-start;
+`;
+
+const Form2 = styled.form`
   width: 100%;
   max-width: 400px;
   display: flex;
@@ -39,6 +49,26 @@ const Title = styled.h1`
   margin: 0 0 20px;
   font-size: 28px;
   font-weight: bold;
+`;
+
+const Label = styled.label`
+  margin: 0 0 5px;
+  font-size: 15px;
+  font-weight: bold;
+`;
+
+const Caption1 = styled.p`
+  font-size: 10px;
+`;
+
+const Caption2 = styled.div`
+  width: 100%;
+  padding: 20px;
+  background-color: rgb(55, 59, 62);
+  border-radius: 10px;
+  color: white;
+  font-size: 12px;
+  line-height: 2;
 `;
 
 // 입력창 + 메시지를 한 묶음으로
@@ -61,7 +91,6 @@ const Message = styled.p`
 const SignUp = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPwd, setInputPwd] = useState("");
-  const [inputPwdCheck, setInputPwdCheck] = useState("");
   const [inputProfileId, setInputProfileId] = useState(0);
   const [emailStatus, setEmailStatus] = useState("idle");
 
@@ -69,7 +98,6 @@ const SignUp = () => {
 
   const isEmail = EMAIL_REGEX.test(inputEmail)
   const isPwd = PWD_REGEX.test(inputPwd)
-  const isPwdCheck = inputPwdCheck !== "" && inputPwd === inputPwdCheck
   const isProfileId = inputProfileId >= 1 && inputProfileId <= 5
 
   const selectProfile = (profileId) => {setInputProfileId(profileId)};
@@ -89,8 +117,8 @@ const SignUp = () => {
         const res = await AxiosApi.memberExist(inputEmail);
         if (ignore) return;
         setEmailStatus(res.data === true ? "duplicate" : "available");
-      } catch (err) {
-        console.error("이메일 중복 확인 실패 ", err)
+      } catch (error) {
+        console.error("이메일 중복 확인 실패 ", error)
         if (!ignore) setEmailStatus("error");
       }
     }, 500);
@@ -103,7 +131,7 @@ const SignUp = () => {
 
   // 형식 OK + 중복 아님 이어야 최종 통과
   const isEmailOk = isEmail && emailStatus === "available";
-  const isAllValid = isEmailOk && isPwd && isPwdCheck && isProfileId;
+  const isAllValid = isEmailOk && isPwd && isProfileId;
 
 
   // 이메일 메시지 문구
@@ -144,24 +172,40 @@ const SignUp = () => {
 
   return (
     <Container>
-      <Form onSubmit={onSubmit}>
+      <Form1>
+        <Caption1>함께하는 즐거움!</Caption1>
+        <br/>
+        <Title>나의 선택으로
+          <br/>시작하는 이야기</Title>
+        <br/>
+        <Caption1>계정을 만들고 투표에 참여해보세요!
+          <br/>의견을 나누고, 질문을 직접 등록할 수 있습니다.</Caption1>
+        <Caption2>01 두 가지 선택 중 내 의견 남기기<br/>
+        02 참여 후 투표 현황 확인하기
+        03 궁금한 질문 투표로 만들기</Caption2>
+
+      </Form1>
+      <Form2 onSubmit={onSubmit}>
         <Title>회원가입</Title>
 
+
+        <Label>이메일</Label>
         <Field>
           <Input
             type="email"
             value={inputEmail}
-            placeholder="이메일"
+            placeholder="이메일을 입력해주세요"
             onChange={(e) => setInputEmail(e.target.value.trim())}
           />
           <Message $valid={isEmailOk}>{getEmailMessage()}</Message>
         </Field>
 
+        <Label>비밀번호</Label>
         <Field>
           <Input
             type="password"
             value={inputPwd}
-            placeholder="비밀번호"
+            placeholder="비밀번호를 입력해주세요"
             onChange={(e) => setInputPwd(e.target.value)}
           />
           <Message $valid={isPwd}>
@@ -172,21 +216,7 @@ const SignUp = () => {
           </Message>
         </Field>
 
-        <Field>
-          <Input
-            type="password"
-            value={inputPwdCheck}
-            placeholder="비밀번호 확인"
-            onChange={(e) => setInputPwdCheck(e.target.value)}
-          />
-          <Message $valid={isPwdCheck}>
-            {inputPwdCheck &&
-              (isPwdCheck
-                ? "비밀번호가 일치합니다."
-                : "비밀번호가 일치하지 않습니다.")}
-          </Message>
-        </Field>
-
+        <Label>프로필</Label>
         <ProfileChoice
             onSelect={selectProfile}
             selectedId={inputProfileId}
@@ -196,7 +226,7 @@ const SignUp = () => {
           가입하기
         </Button>
 
-      </Form>
+      </Form2>
     </Container>
   );
 };

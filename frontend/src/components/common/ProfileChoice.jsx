@@ -15,13 +15,14 @@ import profile5 from "../../assets/profiles/profile5.png"
 
 const ProfileList = styled.div`
   display: flex;
+  flex: 1;
   justify-content: center;
-  gap: 12px;
+  gap: 5px;
 `;
 
 const ProfileImage = styled.img`
-  width: 55px;
-  height: 55px;
+  width: 60px;
+  height: 60px;
   object-fit: cover;
   border-radius: 10px;
   cursor: pointer;
