@@ -97,26 +97,32 @@ const Login = () => {
       if (response.data) {
         localStorage.setItem("isLogin", "TRUE");
         localStorage.setItem("email", inputEmail);
-        nav("/votes", { replace: true }); // 뒤로가기로 로그인 화면에 다시 오지 않도록
+        nav("/", { replace: true }); // 뒤로가기로 로그인 화면에 다시 오지 않도록
       } else {
         alert("이메일 또는 비밀번호가 틀립니다.");
       }
     } catch (errer) {
-        console.error("로그인 오류", errer);
-        alert("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-      }
+      console.error("로그인 오류", errer);
+      alert("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    }
   };
 
   return (
     <Container>
       <Form1>
         <Caption1>찬반 토론의 시작!</Caption1>
-        <br/>
-        <Title>당신의 생각은<br/>어느 쪽인가요?</Title>
-        <br/>
-        <Caption1>두 가지 선택 사이, 나의 의견을 남겨보세요.
-          <br/>
-          투표에 참여하고 대중의 선택을 볼 수 있습니다.</Caption1>
+        <br />
+        <Title>
+          당신의 생각은
+          <br />
+          어느 쪽인가요?
+        </Title>
+        <br />
+        <Caption1>
+          두 가지 선택 사이, 나의 의견을 남겨보세요.
+          <br />
+          투표에 참여하고 대중의 선택을 볼 수 있습니다.
+        </Caption1>
         <ABbox>
           <Caption2>
             <Title>A</Title>
