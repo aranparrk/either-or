@@ -7,75 +7,128 @@ import AxiosApi from "../api/AxiosApi";
 
 const Container = styled.div`
   display: flex;
-  box-sizing: border-box;
   width: 100%;
   flex: 1;
+  box-sizing: border-box;
   justify-content: center;
   align-items: center;
+  gap: 56px;
+  padding: 48px 24px;
+
+  @media (max-width: 820px) {
+    flex-direction: column;
+    gap: 32px;
+  }
 `;
 
 const Form1 = styled.div`
   width: 100%;
-  max-width: 400px;
+  max-width: 360px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding: 40px;
-  gap: 4px;
   align-items: flex-start;
+
+  > p {
+    margin-bottom: 20px;
+  }
 `;
 
 const Form2 = styled.form`
   width: 100%;
   max-width: 400px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  border: 1px solid gray;
-  border-radius: 10px;
-  padding: 40px;
-  gap: 4px;
-  align-items: flex-start;
+  padding: 36px;
+  gap: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background-color: white;
+
+  > label:not(:first-of-type) {
+    margin-top: 12px;
+  }
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 14px;
+  }
 `;
 
 const ABbox = styled.div`
   display: flex;
-  justify-content: center;
   width: 100%;
-  gap: 10px;
-  justify-content: space-around;
+  gap: 12px;
+  margin-top: 4px;
 `;
 
 const Title = styled.h1`
-  margin: 0 0 20px;
-  font-size: 28px;
-  font-weight: bold;
+  margin: 0 0 24px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #252525;
 `;
 
 const Label = styled.label`
-  margin: 0 0 5px;
-  font-size: 15px;
-  font-weight: bold;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
 `;
 
 const Caption1 = styled.p`
-  font-size: 10px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #666;
 `;
 
 const Caption2 = styled.div`
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   min-width: 0;
+  height: 120px;
   box-sizing: border-box;
-  padding: 20px;
-  background-color: rgb(55, 59, 62);
+  padding: 16px;
+  background-color: #373b3e;
   border-radius: 10px;
   color: white;
-  font-size: 12px;
   text-align: center;
+
+  h1 {
+    margin: 0 0 10px;
+    font-size: 30px;
+    color: white;
+  }
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: #d1d5db;
+  }
 `;
 
 const SignUpLink = styled(Link)`
+  display: block;
   width: 100%;
+  margin-top: 8px;
   text-align: center;
   text-decoration: none;
+  font-size: 14px;
+  color: #555;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const Login = () => {
@@ -111,18 +164,19 @@ const Login = () => {
     <Container>
       <Form1>
         <Caption1>찬반 토론의 시작!</Caption1>
-        <br />
+
         <Title>
           당신의 생각은
           <br />
           어느 쪽인가요?
         </Title>
-        <br />
+
         <Caption1>
           두 가지 선택 사이, 나의 의견을 남겨보세요.
           <br />
           투표에 참여하고 대중의 선택을 볼 수 있습니다.
         </Caption1>
+
         <ABbox>
           <Caption2>
             <Title>A</Title>
@@ -134,6 +188,7 @@ const Login = () => {
           </Caption2>
         </ABbox>
       </Form1>
+
       <Form2 onSubmit={onSubmit}>
         <Title>로그인</Title>
         <Label>이메일</Label>
