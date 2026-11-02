@@ -177,12 +177,16 @@ const PollDetail = () => {
   const [resultError, setResultError] = useState("");
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
+  const [hasVoted, setHasVoted] = useState(false);
+  const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
     setPoll(null);
     setSelectedOptionId(null);
     setResult(null);
     setResultError("");
+    setHasVoted(false);
+    setShowResult(false);
 
     AxiosApi.pollDetail(id)
       .then((response) => {
@@ -191,23 +195,31 @@ const PollDetail = () => {
 
         const isClosed = new Date(pollData.deadline) <= new Date();
 
-        if (isClosed) {
-          AxiosApi.voteResult(id)
-            .then((response) => {
-              setResult(response.data);
-            })
-            .catch((error) => {
-              console.error("투표 결과 조회 실패:", error);
+        // 상세 페이지 진입 시 투표 결과 조회
+        AxiosApi.voteResult(id)
+          .then((response) => {
+            setResult(response.data);
 
-              if (error.response?.status === 401) {
-                setResultError("로그인이 필요합니다.");
-              } else if (error.response?.status === 403) {
-                setResultError("투표 결과 조회 권한이 없습니다.");
-              } else {
-                setResultError("투표 결과를 불러오지 못했습니다.");
-              }
-            });
-        }
+            // 진행 중인데 결과 조회 성공 = 이미 투표한 사용자
+            if (!isClosed) {
+              setHasVoted(true);
+              setShowResult(true);
+            }
+          })
+          .catch((error) => {
+            if (!isClosed && error.response?.status === 403) {
+              // 아직 투표하지 않은 사용자
+              return;
+            }
+
+            if (!isClosed && error.response?.status === 401) {
+              // 로그인하지 않은 사용자
+              return;
+            }
+
+            console.error("투표 결과 조회 실패:", error);
+            setResultError("투표 결과를 불러오지 못했습니다.");
+          });
       })
       .catch((error) => {
         console.error("투표 상세 조회 실패:", error);
@@ -238,17 +250,46 @@ const PollDetail = () => {
     try {
       setIsSubmitting(true);
 
-      const response = await AxiosApi.voteCreate(id, selectedOptionId);
+      if (hasVoted) {
+        // 이미 투표한 경우 PUT
+        await AxiosApi.voteUpdate(id, selectedOptionId);
+      } else {
+        try {
+          // 최초 투표 POST
+          await AxiosApi.voteCreate(id, selectedOptionId);
+        } catch (error) {
+          if (error.response?.status === 409) {
+            // 이전에 투표한 사용자라면 PUT으로 변경
+            await AxiosApi.voteUpdate(id, selectedOptionId);
+          } else {
+            throw error;
+          }
+        }
+      }
 
-      console.log("투표 참여 성공:", response.data);
-      alert("투표가 완료되었습니다.");
+      setHasVoted(true);
+      alert("투표가 반영되었습니다.");
+
+      // 투표 성공 후 결과 조회
+      setResult(null);
+
+      try {
+        const response = await AxiosApi.voteResult(id);
+        setResult(response.data);
+        setResultError("");
+      } catch (error) {
+        console.error("투표 결과 조회 실패:", error);
+        setResultError("투표는 반영됐지만 결과를 불러오지 못했습니다.");
+      }
+
+      setShowResult(true);
     } catch (error) {
-      console.error("투표 참여 실패:", error);
+      console.error("투표 처리 실패:", error);
 
       if (error.response?.status === 401) {
         alert("로그인이 필요합니다.");
-      } else if (error.response?.status === 409) {
-        alert("이미 참여한 투표입니다.");
+      } else if (error.response?.status === 403) {
+        alert("투표를 변경할 권한이 없습니다.");
       } else {
         alert("투표 처리 중 오류가 발생했습니다.");
       }
@@ -301,9 +342,11 @@ const PollDetail = () => {
       </PollHeader>
 
       <VoteSection>
-        <SectionTitle>{isClosed ? "투표 결과" : "투표하기"}</SectionTitle>
+        <SectionTitle>
+          {isClosed || showResult ? "투표 결과" : "투표하기"}
+        </SectionTitle>
 
-        {isClosed ? (
+        {isClosed || showResult ? (
           result ? (
             <>
               <p>총 {result.totalVotes}표</p>
@@ -322,6 +365,12 @@ const PollDetail = () => {
                   </div>
                 );
               })}
+
+              {!isClosed && (
+                <VoteButton type="button" onClick={() => setShowResult(false)}>
+                  선택 변경하기
+                </VoteButton>
+              )}
             </>
           ) : (
             <Notice>{resultError || "투표 결과를 불러오는 중..."}</Notice>

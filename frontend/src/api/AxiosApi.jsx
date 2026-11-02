@@ -74,6 +74,13 @@ const AxiosApi = {
     return await api.get(`/api/votes/${pollId}/results`);
   },
 
+  // 투표 변경 (PUT)
+  voteUpdate: async (id, optionId) => {
+    return await api.put(`/api/votes/${id}/choices`, {
+      optionId,
+    });
+  },
+
   // ====================================
   // 투표 게시글 API
   // ====================================

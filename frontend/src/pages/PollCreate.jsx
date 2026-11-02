@@ -3,6 +3,7 @@ import styled from "styled-components";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import AxiosApi from "../api/AxiosApi";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   box-sizing: border-box;
@@ -97,6 +98,7 @@ const PollCreate = () => {
   const [optionA, setOptionA] = useState("");
   const [optionB, setOptionB] = useState("");
   const [deadline, setDeadline] = useState("");
+  const nav = useNavigate();
 
   const handleCreate = async () => {
     if (title.trim() === "") {
@@ -124,6 +126,7 @@ const PollCreate = () => {
 
       console.log("투표 등록 성공:", response.data);
       alert("투표가 등록되었습니다.");
+      nav("/");
     } catch (error) {
       console.error("투표 등록 실패:", error);
       alert("투표 등록에 실패했습니다.");
