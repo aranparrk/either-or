@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import AxiosApi from "../../api/AxiosApi";
+import ProfileIcon from "./ProfileIcon.jsx";
 
 const HeaderContainer = styled.header`
   width: 100%;
@@ -74,6 +75,7 @@ const Header = () => {
 
       localStorage.removeItem("isLogin");
       localStorage.removeItem("email");
+      localStorage.removeItem("profileId");
 
       nav("/login", { replace: true });
     } catch (error) {
@@ -92,9 +94,13 @@ const Header = () => {
 
         <RightMenu>
           {isLogin ? (
-            <LogoutButton type="button" onClick={onLogout}>
-              로그아웃
-            </LogoutButton>
+            <>
+              <ProfileIcon/>
+              <span>|</span>
+              <LogoutButton type="button" onClick={onLogout}>
+                로그아웃
+              </LogoutButton>
+            </>
           ) : (
             <>
               <MenuLink to="/login">로그인</MenuLink>
