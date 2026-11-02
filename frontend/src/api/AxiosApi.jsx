@@ -21,7 +21,7 @@ const AxiosApi = {
 
   // 회원가입(POST)
   memberSignup: async (email, pwd, profileId) => {
-    return await api.post("/api/auth/signup", {
+    return await api.post("/api/signup", {
       email,
       pwd,
       profileId,
@@ -30,7 +30,7 @@ const AxiosApi = {
 
   // 로그인(POST)
   memberLogin: async (email, pwd) => {
-    return await api.post("/api/auth/login", { email, pwd });
+    return await api.post("/api/login", { email, pwd });
   },
 
   // 로그아웃(POST)
