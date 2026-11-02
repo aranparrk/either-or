@@ -374,7 +374,7 @@ const PollDetail = () => {
                   <div key={option.optionId}>
                     <p>
                       {option.content} : {optionResult?.voteCount ?? 0}표 (
-                      {optionResult?.percentage ?? 0}%)
+                      {(optionResult?.percentage ?? 0).toFixed(1)}%)
                     </p>
                     <ResultBar>
                       <ResultFill

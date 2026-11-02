@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Spring Boot 서버 주소
-const HM_DOMAIN = "http://localhost:8080";
+const HM_DOMAIN = "/";
 
 // 세션 쿠키를 포함하여 요청
 const api = axios.create({
