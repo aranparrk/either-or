@@ -167,6 +167,20 @@ const ButtonRow = styled.div`
   margin-bottom: 32px;
 `;
 
+const ResultBar = styled.div`
+  width: 100%;
+  height: 12px;
+  background-color: #e9e9eb;
+  border-radius: 6px;
+  overflow: hidden;
+`;
+
+const ResultFill = styled.div`
+  height: 100%;
+  background-color: #373a40;
+  border-radius: 6px;
+`;
+
 const PollDetail = () => {
   const { id } = useParams();
 
@@ -362,12 +376,21 @@ const PollDetail = () => {
                       {option.content} : {optionResult?.voteCount ?? 0}표 (
                       {optionResult?.percentage ?? 0}%)
                     </p>
+                    <ResultBar>
+                      <ResultFill
+                        style={{ width: `${optionResult?.percentage ?? 0}%` }}
+                      />
+                    </ResultBar>
                   </div>
                 );
               })}
 
               {!isClosed && (
-                <VoteButton type="button" onClick={() => setShowResult(false)}>
+                <VoteButton
+                  type="button"
+                  style={{ marginTop: "24px" }}
+                  onClick={() => setShowResult(false)}
+                >
                   선택 변경하기
                 </VoteButton>
               )}
