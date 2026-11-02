@@ -20,7 +20,6 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/votes")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class VoteController {
     private final VoteService voteService;
 
