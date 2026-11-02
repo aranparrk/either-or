@@ -15,7 +15,7 @@ const StyledBtn = styled.button`
   box-sizing: border-box;
   height: 50px;
   border: none;
-  background-color: rgb(55, 59, 62);
+  background-color: rgb(100, 100, 100);
   border-radius: 10px;
   color: white;
   font-size: 15px;
@@ -30,11 +30,11 @@ const StyledBtn = styled.button`
   ${({ $enabled }) =>
     $enabled &&
     css`
-      background-color: rgb(75, 79, 82);
+      background-color: rgb(55, 59, 62);
       cursor: pointer;
 
       &:active {
-        background-color: rgb(55, 59, 62);
+        background-color: rgb(70, 70, 70);
       }
     `}
 `;

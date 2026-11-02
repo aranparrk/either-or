@@ -92,9 +92,9 @@ const Caption2 = styled.div`
   box-sizing: border-box;
   padding: 24px;
   gap: 14px;
-  background-color: #373b3e;
+  background-color: rgb(234, 234, 234);
   border-radius: 10px;
-  color: white;
+  color: #666;
   font-size: 13px;
   line-height: 1.6;
 `;
@@ -194,7 +194,7 @@ const SignUp = () => {
 
     if (response.data === true) {
       alert("회원가입이 완료되었습니다.");
-      nav("/", { replace: true });
+      nav("/login", { replace: true }); // 회원가입 완료 후 로그인 페이지로 이동
     } else {
       alert("회원 가입이 실패 했습니다.");
     }
