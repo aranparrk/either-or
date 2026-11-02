@@ -99,21 +99,20 @@ const Caption2 = styled.div`
   height: 120px;
   box-sizing: border-box;
   padding: 16px;
-  background-color: #373b3e;
+  background-color: rgb(234, 234, 234);
   border-radius: 10px;
-  color: white;
   text-align: center;
 
   h1 {
     margin: 0 0 10px;
     font-size: 30px;
-    color: white;
+    color: #666;
   }
 
   p {
     margin: 0;
     font-size: 12px;
-    color: #d1d5db;
+    color: #666;
   }
 `;
 
@@ -179,12 +178,12 @@ const Login = () => {
 
         <ABbox>
           <Caption2>
-            <Title>A</Title>
-            <Caption1>당신의 선택</Caption1>
+            <h1>A</h1>
+            <p>당신의 선택</p>
           </Caption2>
           <Caption2>
-            <Title>B</Title>
-            <Caption1>당신의 선택</Caption1>
+            <h1>B</h1>
+            <p>당신의 선택</p>
           </Caption2>
         </ABbox>
       </Form1>
