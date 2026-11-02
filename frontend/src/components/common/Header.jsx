@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import AxiosApi from "../../api/AxiosApi";
 
 const HeaderContainer = styled.header`
   width: 100%;
@@ -47,7 +48,40 @@ const RightMenu = styled.nav`
   gap: 12px;
 `;
 
+const LogoutButton = styled.button`
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 const Header = () => {
+  const nav = useNavigate();
+
+  useLocation(); // 페이지 이동 시 Header 다시 렌더링
+
+  const isLogin = localStorage.getItem("isLogin") === "TRUE";
+
+  const onLogout = async () => {
+    try {
+      await AxiosApi.memberLogout();
+
+      localStorage.removeItem("isLogin");
+      localStorage.removeItem("email");
+
+      nav("/login", { replace: true });
+    } catch (error) {
+      console.error("로그아웃 오류", error);
+      alert("로그아웃 중 오류가 발생했습니다.");
+    }
+  };
+
   return (
     <HeaderContainer>
       <HeaderInner>
@@ -57,9 +91,17 @@ const Header = () => {
         </LeftMenu>
 
         <RightMenu>
-          <MenuLink to="/login">로그인</MenuLink>
-          <span>|</span>
-          <MenuLink to="/signup">회원가입</MenuLink>
+          {isLogin ? (
+            <LogoutButton type="button" onClick={onLogout}>
+              로그아웃
+            </LogoutButton>
+          ) : (
+            <>
+              <MenuLink to="/login">로그인</MenuLink>
+              <span>|</span>
+              <MenuLink to="/signup">회원가입</MenuLink>
+            </>
+          )}
         </RightMenu>
       </HeaderInner>
     </HeaderContainer>
