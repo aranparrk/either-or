@@ -23,6 +23,11 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder pwdEncoder;
 
+    // 이메일 중복 확인
+    public boolean memberExist(String email) {
+        return memberRepository.existsByEmail(email);
+    }
+
     // 회원가입
     public boolean signUp(SignUpRequestDto dto) {
 

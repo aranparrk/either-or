@@ -21,6 +21,16 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
 
+    @Operation(summary = "이메일 중복 확인")
+    @GetMapping("/exists/{email}")
+    public ResponseEntity<Boolean> memberExist(
+            @PathVariable String email
+    ) {
+        return ResponseEntity.ok(
+                authService.memberExist(email)
+        );
+    }
+
     @Operation(summary = "회원가입", description = "회원가입을 합니다.")
     @PostMapping("/signup")
     public ResponseEntity<Boolean> signUp(@RequestBody SignUpRequestDto dto) {
