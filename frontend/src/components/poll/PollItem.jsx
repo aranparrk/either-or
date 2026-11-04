@@ -80,17 +80,35 @@ const DetailLink = styled.span`
   color: #444;
 `;
 
+// 카드 상단
+const CardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+`;
+
+// 투표 참여자 수
+const VoteCount = styled.span`
+  font-size: 13px;
+  font-weight: 500;
+  color: #777;
+  white-space: nowrap;
+`;
+
 // 투표 카드 하나를 출력하는 컴포넌트
 const PollItem = ({ poll }) => {
   const isClosed = new Date(poll.deadline) <= new Date();
 
   return (
     <PollCard to={`/votes/${poll.pollId}`}>
-      <StatusBadge $closed={isClosed}>
-        {isClosed ? "마감" : "진행 중"}
-      </StatusBadge>
+      <CardHeader>
+        <StatusBadge $closed={isClosed}>
+          {isClosed ? "마감" : "진행 중"}
+        </StatusBadge>
 
-      <PollTitle>{poll.title}</PollTitle>
+        <VoteCount>👥 {poll.totalVotes}명 참여</VoteCount>
+      </CardHeader>
 
       <CardFooter>
         <Deadline>
