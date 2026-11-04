@@ -57,8 +57,48 @@ const PollGrid = styled.div`
   }
 `;
 
+// 필터 및 정렬 영역
+const FilterBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+`;
+
+// 필터 버튼 그룹
+const FilterGroup = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+// 필터 버튼
+const FilterButton = styled.button`
+  padding: 10px 16px;
+  border: 1px solid ${({ $active }) => ($active ? "#36393b" : "#e8e8e8")};
+  border-radius: 8px;
+  background-color: ${({ $active }) => ($active ? "#36393b" : "#fff")};
+  color: ${({ $active }) => ($active ? "#fff" : "#777")};
+  font-size: 13px;
+  cursor: pointer;
+`;
+
+// 정렬 선택
+const SortSelect = styled.select`
+  padding: 10px 12px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #444;
+  font-size: 13px;
+  cursor: pointer;
+`;
+
 const PollList = () => {
   const [polls, setPolls] = useState([]);
+  const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("latest");
   const nav = useNavigate();
 
   useEffect(() => {
@@ -70,6 +110,28 @@ const PollList = () => {
         console.error("투표 목록 조회 실패 : ", error);
       });
   }, []);
+
+  const filteredPolls = polls
+    .filter((poll) => {
+      const isClosed = new Date(poll.deadline) <= new Date();
+
+      if (filter === "ongoing") {
+        return !isClosed;
+      }
+
+      if (filter === "closed") {
+        return isClosed;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (sort === "popular") {
+        return b.totalVotes - a.totalVotes;
+      }
+
+      return new Date(b.regDate) - new Date(a.regDate);
+    });
 
   return (
     <PageContainer>
@@ -84,8 +146,38 @@ const PollList = () => {
         </Button>
       </PageHeader>
 
+      <FilterBar>
+        <FilterGroup>
+          <FilterButton
+            $active={filter === "all"}
+            onClick={() => setFilter("all")}
+          >
+            전체
+          </FilterButton>
+
+          <FilterButton
+            $active={filter === "ongoing"}
+            onClick={() => setFilter("ongoing")}
+          >
+            진행 중
+          </FilterButton>
+
+          <FilterButton
+            $active={filter === "closed"}
+            onClick={() => setFilter("closed")}
+          >
+            마감
+          </FilterButton>
+        </FilterGroup>
+
+        <SortSelect value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="latest">최신순</option>
+          <option value="popular">인기순</option>
+        </SortSelect>
+      </FilterBar>
+
       <PollGrid>
-        {polls.map((poll) => (
+        {filteredPolls.map((poll) => (
           <PollItem key={poll.pollId} poll={poll} />
         ))}
       </PollGrid>
