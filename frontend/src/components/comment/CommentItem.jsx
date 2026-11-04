@@ -22,7 +22,7 @@ const DateText = styled.span`
 const CommentItem = ({ comment }) => {
   return (
     <Item>
-      <Writer>{comment.email}</Writer>
+      <Writer>익명</Writer>
       <Content>{comment.content}</Content>
       <DateText>{new Date(comment.regDate).toLocaleString("ko-KR")}</DateText>
     </Item>
