@@ -110,6 +110,8 @@ const PollItem = ({ poll }) => {
         <VoteCount>👥 {poll.totalVotes}명 참여</VoteCount>
       </CardHeader>
 
+      <PollTitle>{poll.title}</PollTitle>
+
       <CardFooter>
         <Deadline>
           마감일: {new Date(poll.deadline).toLocaleString("ko-KR")}
