@@ -5,36 +5,53 @@ const btnSizes = {
   long: css`
     width: 100%;
   `,
+
   // 투표등록, 댓글등록 버튼
   short: css`
-    width: 100px;
+    min-width: 100px;
+    padding: 0 20px;
   `,
 };
 
 const StyledBtn = styled.button`
   box-sizing: border-box;
-  height: 50px;
-  border: none;
-  background-color: rgb(100, 100, 100);
-  border-radius: 10px;
-  color: white;
-  font-size: 15px;
-  font-weight: 700;
+  height: 44px;
+  border: 1px solid transparent;
+  background-color: #e9eaec;
+  border-radius: 9px;
+  color: #969ba1;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
   cursor: not-allowed;
 
-  /* size 값에 따라 버튼 사이즈 변경
-  || btnSizes.long : 버튼 size 값에 long, short가 아닌 다른 값이 들어왔을 때에도 long 스타일을 적용 */
+  transition: background-color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+
   ${({ $size }) => btnSizes[$size] || btnSizes.long}
 
-  /* enabled가 true면 활성화 되는 버튼 스타일 */
   ${({ $enabled }) =>
     $enabled &&
     css`
-      background-color: rgb(55, 59, 62);
+      background-color: #30363d;
+      color: #fff;
       cursor: pointer;
 
+      &:hover {
+        background-color: #454d56;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        transform: translateY(-1px);
+      }
+
       &:active {
-        background-color: rgb(70, 70, 70);
+        background-color: #252a30;
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #76879b;
+        outline-offset: 3px;
       }
     `}
 `;
