@@ -8,6 +8,7 @@ import com.eitheror.backend.entity.PollOption;
 import com.eitheror.backend.repository.MemberRepository;
 import com.eitheror.backend.repository.PollOptionRepository;
 import com.eitheror.backend.repository.PollRepository;
+import com.eitheror.backend.repository.VoteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
@@ -29,6 +30,7 @@ public class PollService {
     private final PollRepository pollRepository;
     private final PollOptionRepository pollOptionRepository;
     private final MemberRepository memberRepository;
+    private final VoteRepository voteRepository;
 
     // 투표 목록 조회
     @Transactional(readOnly = true)
@@ -186,6 +188,11 @@ public class PollService {
         pollListResDto.setRegDate(poll.getRegDate());
         pollListResDto.setDeadline(poll.getDeadline());
         pollListResDto.setContentImage(poll.getContentImage()); // 목록 조회에서 썸네일 추가
+
+        // 투표 참여자 수 추가
+        pollListResDto.setTotalVotes(
+                voteRepository.countByPoll_PollId(poll.getPollId())
+        );
 
         return pollListResDto;
     }
