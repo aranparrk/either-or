@@ -11,6 +11,13 @@ const btnSizes = {
     min-width: 100px;
     padding: 0 20px;
   `,
+  // 이미지 등록 버튼
+  small: css`
+  width: 90px;
+  height: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  `
 };
 
 const StyledBtn = styled.button`

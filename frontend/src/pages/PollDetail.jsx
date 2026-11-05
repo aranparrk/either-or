@@ -181,6 +181,16 @@ const ResultFill = styled.div`
   border-radius: 6px;
 `;
 
+// 상세페이지에 이미지 추가
+const PollImage = styled.img`
+  display: flex;
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  border-radius: 14px;
+  margin: 28px auto 0;
+`;
+
 const PollDetail = () => {
   const { id } = useParams();
 
@@ -353,6 +363,9 @@ const PollDetail = () => {
         </PollMeta>
 
         <PollContent>{poll.content}</PollContent>
+        {poll.contentImage && (
+          <PollImage src={poll.contentImage} alt="이미지" />
+        )}
       </PollHeader>
 
       <VoteSection>

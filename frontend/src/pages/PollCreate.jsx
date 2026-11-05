@@ -4,6 +4,7 @@ import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import AxiosApi from "../api/AxiosApi";
 import { useNavigate } from "react-router-dom";
+import ImageUpload from "../components/common/ImageUpload.jsx";
 
 const Container = styled.div`
   box-sizing: border-box;
@@ -98,6 +99,7 @@ const PollCreate = () => {
   const [optionA, setOptionA] = useState("");
   const [optionB, setOptionB] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [contentImage, setContentImage] = useState(null);
   const nav = useNavigate();
 
   const handleCreate = async () => {
@@ -121,7 +123,8 @@ const PollCreate = () => {
         title,
         content,
         [optionA, optionB],
-        deadline
+        deadline,
+        contentImage
       );
 
       console.log("투표 등록 성공:", response.data);
@@ -157,6 +160,7 @@ const PollCreate = () => {
             onChange={(e) => setContent(e.target.value)}
             placeholder="투표에 대한 설명을 입력해주세요."
           />
+          <ImageUpload onImageSelect={setContentImage}/>
         </Field>
 
         <OptionRow>

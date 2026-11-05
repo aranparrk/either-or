@@ -53,12 +53,13 @@ const AxiosApi = {
   },
 
   // 투표 등록 (POST)
-  pollCreate: async (title, content, options, deadline) => {
+  pollCreate: async (title, content, options, deadline, contentImage) => {
     return await api.post("/api/votes", {
       title,
       content,
       options,
       deadline,
+      contentImage,
     });
   },
 

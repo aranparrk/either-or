@@ -142,6 +142,7 @@ public class PollService {
         poll.setTitle(pollCreateReqDto.getTitle());
         poll.setContent(pollCreateReqDto.getContent());
         poll.setDeadline(pollCreateReqDto.getDeadline());
+        poll.setContentImage(pollCreateReqDto.getContentImage()); // 투표 등록 시 이미지 등록 추가
 
         // 게시글 저장
         Poll savedPoll = pollRepository.save(poll);
@@ -172,6 +173,7 @@ public class PollService {
         resDto.setContent(savedPoll.getContent());
         resDto.setOptions(optionDtos);
         resDto.setDeadline(savedPoll.getDeadline());
+        resDto.setContentImage(savedPoll.getContentImage());
 
         return resDto;
     }
@@ -183,6 +185,7 @@ public class PollService {
         pollListResDto.setTitle(poll.getTitle());
         pollListResDto.setRegDate(poll.getRegDate());
         pollListResDto.setDeadline(poll.getDeadline());
+        pollListResDto.setContentImage(poll.getContentImage()); // 목록 조회에서 썸네일 추가
 
         return pollListResDto;
     }
@@ -194,6 +197,7 @@ public class PollService {
         pollDetailResDto.setPollId(poll.getPollId());
         pollDetailResDto.setTitle(poll.getTitle());
         pollDetailResDto.setContent(poll.getContent());
+        pollDetailResDto.setContentImage(poll.getContentImage()); // 상세 조회에서 이미지 추가
 
         // 해당 게시글에 속한 선택지 조회
         List<PollOption> options =

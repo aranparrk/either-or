@@ -16,4 +16,5 @@ public class PollCreateResDto {
     private String content;
     private List<PollOptionResDto> options;
     private LocalDateTime deadline;
+    private String contentImage;
 }

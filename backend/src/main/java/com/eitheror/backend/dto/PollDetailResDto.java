@@ -17,4 +17,5 @@ public class PollDetailResDto {
     private LocalDateTime regDate;
     private LocalDateTime deadline;
     private List<PollOptionResDto> options;
+    private String contentImage;
 }
