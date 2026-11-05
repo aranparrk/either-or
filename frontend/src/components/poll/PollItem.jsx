@@ -41,9 +41,25 @@ const StatusBadge = styled.span`
   color: ${({ $closed }) => ($closed ? "#777" : "#238455")};
 `;
 
+// 투표 썸네일 + 투표 제목을 같은 줄에 정렬하기 위한 묶음
+const PollInfo = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 20px 0 24px;
+  gap: 16px;
+`;
+
+// 투표 썸네일
+const PollImage = styled.img`
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #d0d0d0;
+`;
+
 // 투표 제목
 const PollTitle = styled.h3`
-  margin: 20px 0 24px;
   font-size: 20px;
   font-weight: 600;
   line-height: 1.5;
@@ -90,7 +106,13 @@ const PollItem = ({ poll }) => {
         {isClosed ? "마감" : "진행 중"}
       </StatusBadge>
 
-      <PollTitle>{poll.title}</PollTitle>
+      <PollInfo>
+        {poll.contentImage && (
+          <PollImage src={poll.contentImage} alt="이미지" />
+        )}
+
+        <PollTitle>{poll.title}</PollTitle>
+      </PollInfo>
 
       <CardFooter>
         <Deadline>
