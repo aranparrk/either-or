@@ -29,6 +29,9 @@ public class Poll {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "content_image", length = 1000)
+    private String contentImage;
+
     @Column(name = "reg_date", updatable = false)
     private LocalDateTime regDate;
 
