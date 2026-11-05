@@ -14,4 +14,5 @@ public class PollListResDto {
     private String title;
     private LocalDateTime regDate;
     private LocalDateTime deadline;
+    private String contentImage;
 }
