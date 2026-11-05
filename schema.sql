@@ -36,7 +36,7 @@ CREATE TABLE polls (
 	reg_date DATETIME DEFAULT CURRENT_TIMESTAMP,
 	deadline DATETIME NOT NULL,
 	FOREIGN KEY (member_id) REFERENCES member(member_id)
-)
+);
 
 
 -- 투표 선택지 테이블 (poll_options)
@@ -48,7 +48,7 @@ CREATE TABLE poll_options (
 	poll_id BIGINT NOT NULL,
 	content VARCHAR(255) NOT NULL,
 	FOREIGN KEY (poll_id) REFERENCES polls(poll_id)
-)
+);
 
 -- 투표 기록 테이블 (votes)
 -- vote_id (PK)
@@ -65,7 +65,7 @@ CREATE TABLE votes (
 	FOREIGN KEY (option_id) REFERENCES poll_options(option_id),
 	
 	UNIQUE (member_id, poll_id)
-)
+);
 
 -- 댓글 테이블 (comments) - 선택 기능
 -- comment_id (PK)
@@ -82,8 +82,12 @@ CREATE TABLE comments (
 	
 	FOREIGN KEY (member_id) REFERENCES member(member_id),
 	FOREIGN KEY (poll_id) REFERENCES polls(poll_id)
-)
+);
 
 -- 프로필 아이디 추가
 ALTER TABLE member
 ADD COLUMN profile_image_id INT NOT NULL DEFAULT 1;
+
+-- 투표 게시글에 이미지 추가
+ALTER TABLE polls
+ADD COLUMN content_image VARCHAR(1000) NULL;

@@ -2,14 +2,14 @@ import styled from "styled-components";
 
 const StyledCancelBtn = styled.button`
   box-sizing: border-box;
-  width: 100px;
-  height: 50px;
-  border: ipx solid rgb(55, 59, 62);
+  width: 80px;
+  height: 32px;
+  border: 1px solid rgb(180, 180, 180);
   background-color: white;
   border-radius: 10px;
   color: rgb(55, 59, 62);
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
 `;
 
