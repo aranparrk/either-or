@@ -7,13 +7,11 @@ import com.eitheror.backend.dto.PollListResDto;
 import com.eitheror.backend.service.PollService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -34,7 +32,9 @@ public class PollController {
 
     @Operation(summary = "투표 상세 조회", description = "투표 ID로 상세 정보를 조회합니다.")
     @GetMapping("/{id}")
-    public ResponseEntity<PollDetailResDto> getPollDetail(@PathVariable Long id) {
+    public ResponseEntity<PollDetailResDto> getPollDetail(
+            @PathVariable Long id
+    ) {
         return ResponseEntity.ok(pollService.getPollDetail(id));
     }
 
@@ -42,14 +42,13 @@ public class PollController {
     @PostMapping
     public ResponseEntity<PollCreateResDto> createPoll(
             @RequestBody PollCreateReqDto dto,
-            HttpSession session) {
+            Authentication authentication
+    ) {
+        // JWT 인증 정보에서 회원 번호 추출
+        Long memberId = Long.valueOf(authentication.getName());
 
-        Long memberId = (Long) session.getAttribute("LOGIN_MEMBER_ID");
-
-        if (memberId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"로그인이 필요합니다.");
-        }
-
-        return ResponseEntity.ok(pollService.createPoll(dto, memberId));
+        return ResponseEntity.ok(
+                pollService.createPoll(dto, memberId)
+        );
     }
 }

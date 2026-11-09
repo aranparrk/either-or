@@ -1,11 +1,14 @@
 package com.eitheror.backend.service;
 
+import com.eitheror.backend.constant.Authority;
 import com.eitheror.backend.dto.LoginRequestDto;
 import com.eitheror.backend.dto.LoginResponseDto;
 import com.eitheror.backend.dto.SignUpRequestDto;
+import com.eitheror.backend.dto.TokenDto;
 import com.eitheror.backend.entity.Member;
 import com.eitheror.backend.repository.MemberRepository;
 
+import com.eitheror.backend.security.TokenProvider;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder pwdEncoder;
+    private final TokenProvider tokenProvider;
 
     // 이메일 중복 확인
     public boolean memberExist(String email) {
@@ -64,44 +68,43 @@ public class AuthService {
     }
 
     // 로그인
-    public LoginResponseDto login(LoginRequestDto dto, HttpSession session) {
+    public LoginResponseDto login(LoginRequestDto dto) {
 
         // 이메일과 비밀번호 입력 확인
         if (dto.getEmail() == null || dto.getEmail().isBlank()
                 || dto.getPwd() == null || dto.getPwd().isBlank()) {
             throw new IllegalArgumentException("이메일과 비밀번호를 입력해 주세요.");
         }
-        
-        // 이메일 확인
+
+        // 이메일로 회원 조회
         String email = dto.getEmail().trim();
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."
+                        HttpStatus.UNAUTHORIZED,
+                        "이메일 또는 비밀번호가 올바르지 않습니다."
                 ));
 
-        // 입력한 비밀번호와 DB의 암호화된 비밀번호 비교
-        // !pwdEncoder.matches(입력한 비밀번호, 저장된 암호화 비밀번호)
+        // 비밀번호 확인
         if (!pwdEncoder.matches(dto.getPwd(), member.getPwd())) {
             throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."
+                    HttpStatus.UNAUTHORIZED,
+                    "이메일 또는 비밀번호가 올바르지 않습니다."
             );
         }
 
-        // 로그인 맴버 아이디를 이름표와 함께 저장, 로그아웃때 사용
-        session.setAttribute("LOGIN_MEMBER_ID", member.getMemberId());
+        // 인증에 성공한 회원의 회원번호와 일반 회원 권한으로 JWT 발급
+        TokenDto tokenDto = tokenProvider.createToken(
+                member.getMemberId(),
+                Authority.ROLE_USER
+        );
 
-        // LoginResponseDto 값 돌려주기
+        // 회원 정보와 JWT 반환
         return new LoginResponseDto(
                 member.getMemberId(),
                 member.getEmail(),
-                member.getProfileId()
+                member.getProfileId(),
+                tokenDto.accessToken()
         );
-    }
-
-    // 로그아웃
-    public void logout(HttpSession session) {
-        // 로그인 성공한 맴버 아이디를 무효화
-        session.invalidate();
     }
 
     // DTO → Entity
