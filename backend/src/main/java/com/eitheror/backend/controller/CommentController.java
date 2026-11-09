@@ -5,14 +5,13 @@ import com.eitheror.backend.dto.CommentResDto;
 import com.eitheror.backend.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
@@ -30,16 +29,9 @@ public class CommentController {
     public ResponseEntity<CommentResDto> createComment(
             @PathVariable Long id,
             @Valid @RequestBody CommentCreateReqDto requestDto,
-            HttpSession session) {
-
-        Long memberId = (Long) session.getAttribute("LOGIN_MEMBER_ID");
-
-        if (memberId == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED,
-                    "로그인이 필요합니다."
-            );
-        }
+            Authentication authentication
+    ) {
+        Long memberId = Long.valueOf(authentication.getName());
 
         CommentResDto responseDto =
                 commentService.createComment(memberId, id, requestDto);

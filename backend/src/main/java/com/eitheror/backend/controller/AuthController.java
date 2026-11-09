@@ -38,14 +38,8 @@ public class AuthController {
 
     @Operation(summary = "로그인", description = "로그인을 합니다.")
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto dto, HttpSession session) {
-        return ResponseEntity.ok(authService.login(dto, session));
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto dto) {
+        return ResponseEntity.ok(authService.login(dto));
     }
 
-    @Operation(summary = "로그아웃", description = "로그아웃을 합니다.")
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpSession session) {
-        authService.logout(session);
-        return ResponseEntity.ok("로그아웃 됐습니다.");
-    }
 }

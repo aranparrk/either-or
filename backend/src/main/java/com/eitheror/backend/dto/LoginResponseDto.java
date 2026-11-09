@@ -10,4 +10,5 @@ public class LoginResponseDto {
     private long memberId;
     private String email;
     private Integer profileId;
+    private String accessToken;
 }
