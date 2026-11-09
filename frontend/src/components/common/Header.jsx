@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import AxiosApi from "../../api/AxiosApi";
 import ProfileIcon from "./ProfileIcon.jsx";
+import { useEffect } from "react";
 
 const HeaderContainer = styled.header`
   width: 100%;
@@ -65,24 +65,91 @@ const LogoutButton = styled.button`
 const Header = () => {
   const nav = useNavigate();
 
-  useLocation(); // 페이지 이동 시 Header 다시 렌더링
+  // 페이지 이동 시 변경된 로그인 정보를 반영
 
-  const isLogin = localStorage.getItem("isLogin") === "TRUE";
+  const location = useLocation();
 
-  const onLogout = async () => {
-    try {
-      await AxiosApi.memberLogout();
+  const isLogin =
+    localStorage.getItem("isLogin") === "TRUE" &&
+    Boolean(localStorage.getItem("accessToken"));
 
+  const onLogout = () => {
+    // JWT와 회원 정보 삭제
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("isLogin");
+    localStorage.removeItem("email");
+    localStorage.removeItem("profileId");
+
+    nav("/login", { replace: true });
+  };
+
+  useEffect(() => {
+    let timerId;
+
+    const clearLogin = () => {
+      localStorage.removeItem("accessToken");
       localStorage.removeItem("isLogin");
       localStorage.removeItem("email");
       localStorage.removeItem("profileId");
 
-      nav("/login", { replace: true });
-    } catch (error) {
-      console.error("로그아웃 오류", error);
-      alert("로그아웃 중 오류가 발생했습니다.");
-    }
-  };
+      window.location.replace("/login");
+    };
+
+    const checkExpiration = () => {
+      clearTimeout(timerId);
+
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        return;
+      }
+
+      try {
+        // JWT 가운데 부분에서 만료 시각 읽기
+        const base64 = token
+          .split(".")[1]
+          .replace(/-/g, "+")
+          .replace(/_/g, "/");
+
+        const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+
+        const payload = JSON.parse(atob(padded));
+
+        if (typeof payload.exp !== "number") {
+          clearLogin();
+          return;
+        }
+
+        // JWT의 exp는 초 단위이므로 밀리초로 변환
+        const remainingMs = payload.exp * 1000 - Date.now();
+
+        if (remainingMs <= 0) {
+          clearLogin();
+          return;
+        }
+
+        timerId = window.setTimeout(
+          checkExpiration,
+          Math.min(remainingMs, 2147483647)
+        );
+      } catch {
+        // 토큰 형식이 잘못된 경우에도 로그인 정보 삭제
+        clearLogin();
+      }
+    };
+
+    checkExpiration();
+
+    // 다른 탭이나 절전 상태에서 돌아왔을 때도 다시 확인
+    window.addEventListener("focus", checkExpiration);
+    document.addEventListener("visibilitychange", checkExpiration);
+
+    return () => {
+      clearTimeout(timerId);
+      window.removeEventListener("focus", checkExpiration);
+      document.removeEventListener("visibilitychange", checkExpiration);
+    };
+  }, [location.key]);
 
   return (
     <HeaderContainer>
@@ -95,7 +162,7 @@ const Header = () => {
         <RightMenu>
           {isLogin ? (
             <>
-              <ProfileIcon/>
+              <ProfileIcon />
               <span>|</span>
               <LogoutButton type="button" onClick={onLogout}>
                 로그아웃
