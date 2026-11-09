@@ -133,30 +133,48 @@ const SignUpLink = styled(Link)`
 const Login = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPwd, setInputPwd] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const nav = useNavigate();
 
-  // 둘 다 입력돼야 버튼 활성화
   const isValid = inputEmail.trim() !== "" && inputPwd !== "";
 
-  // form의 onSubmit으로 처리하면 Enter 키로도 로그인 가능
   const onSubmit = async (e) => {
-    e.preventDefault(); // 페이지 새로고침 방지
+    e.preventDefault();
+
+    if (!isValid || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      const response = await AxiosApi.memberLogin(inputEmail, inputPwd);
+      const response = await AxiosApi.memberLogin(inputEmail.trim(), inputPwd);
 
-      if (response.data) {
-        localStorage.setItem("isLogin", "TRUE");
-        localStorage.setItem("email", inputEmail);
-        localStorage.setItem("profileId", response.data.profileId);
-        nav("/", { replace: true }); // 뒤로가기로 로그인 화면에 다시 오지 않도록
-      } else {
-        alert("이메일 또는 비밀번호가 틀립니다.");
+      const data = response.data;
+
+      if (!data?.accessToken) {
+        alert("로그인 응답에 토큰이 없습니다.");
+        return;
       }
-    } catch (errer) {
-      console.error("로그인 오류", errer);
-      alert("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+
+      // JWT 및 회원 정보 저장
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("isLogin", "TRUE");
+      localStorage.setItem("email", data.email);
+      localStorage.setItem("profileId", String(data.profileId));
+
+      nav("/", { replace: true });
+    } catch (error) {
+      console.error("로그인 오류", error);
+
+      if (error.response?.status === 401) {
+        alert("이메일 또는 비밀번호가 올바르지 않습니다.");
+      } else {
+        alert("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -191,23 +209,31 @@ const Login = () => {
 
       <Form2 onSubmit={onSubmit}>
         <Title>로그인</Title>
-        <Label>이메일</Label>
+
+        <Label htmlFor="email">이메일</Label>
         <Input
+          id="email"
           type="email"
+          autoComplete="username"
           value={inputEmail}
           placeholder="이메일을 입력해주세요"
           onChange={(e) => setInputEmail(e.target.value)}
         />
-        <Label>비밀번호</Label>
+
+        <Label htmlFor="pwd">비밀번호</Label>
         <Input
+          id="pwd"
           type="password"
+          autoComplete="current-password"
           value={inputPwd}
           placeholder="비밀번호를 입력해주세요"
           onChange={(e) => setInputPwd(e.target.value)}
         />
-        <Button type="submit" enabled={isValid}>
-          로그인
+
+        <Button type="submit" enabled={isValid && !isSubmitting}>
+          {isSubmitting ? "로그인 중..." : "로그인"}
         </Button>
+
         <SignUpLink to="/signup">회원가입으로 이동</SignUpLink>
       </Form2>
     </Container>

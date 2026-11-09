@@ -160,7 +160,7 @@ const PollCreate = () => {
             onChange={(e) => setContent(e.target.value)}
             placeholder="투표에 대한 설명을 입력해주세요."
           />
-          <ImageUpload onImageSelect={setContentImage}/>
+          <ImageUpload onImageSelect={setContentImage} />
         </Field>
 
         <OptionRow>
