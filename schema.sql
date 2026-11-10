@@ -91,3 +91,7 @@ ADD COLUMN profile_image_id INT NOT NULL DEFAULT 1;
 -- 투표 게시글에 이미지 추가
 ALTER TABLE polls
 ADD COLUMN content_image VARCHAR(1000) NULL;
+
+-- JWT 인증을 도입하게 되어 맴버 테이블에 회원권한 추가
+ALTER TABLE member
+ADD COLUMN authority VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER';
