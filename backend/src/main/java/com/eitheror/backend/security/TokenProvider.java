@@ -20,53 +20,72 @@ import javax.crypto.SecretKey;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Component
 public class TokenProvider {
 
     private static final String AUTH_KEY = "auth";
+    private static final String TYPE_KEY = "typ";
+    public static final String ACCESS = "access";
+    public static final String REFRESH = "refresh";
 
     private final SecretKey key;
     private final long accessExpMs;
+    private final long refreshExpMs;
 
     public TokenProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.access-exp-ms}") long accessExpMs
+            @Value("${jwt.access-exp-ms}") long accessExpMs,
+            @Value("${jwt.refresh-exp-ms}") long refreshExpMs
     ) {
         this.key = Keys.hmacShaKeyFor(
                 Decoders.BASE64.decode(secret)
         );
         this.accessExpMs = accessExpMs;
+        this.refreshExpMs = refreshExpMs;
     }
 
     // 로그인 성공 후 회원번호와과 권한으로 토큰 생성
     public TokenDto createToken(Long memberId, Authority authority) {
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + accessExpMs);
+        long now = System.currentTimeMillis();
+        Date accessExp = new Date(now + accessExpMs);
+        Date refreshExp = new Date(now + refreshExpMs);
 
-        String token = Jwts.builder()
+        String accessToken = Jwts.builder()
                 .subject(memberId.toString())
                 .claim(AUTH_KEY, authority.name())
-                .issuedAt(now)
-                .expiration(expiration)
-                .signWith(key, Jwts.SIG.HS256)
+                .claim(TYPE_KEY, ACCESS)
+                .issuedAt(new Date(now))
+                .expiration(accessExp)
+                .signWith(key)
+                .compact();
+
+        String refreshToken = Jwts.builder()
+                .subject(memberId.toString())
+                .claim(TYPE_KEY, REFRESH)
+                .id(UUID.randomUUID().toString())
+                .issuedAt(new Date(now))
+                .expiration(refreshExp)
+                .signWith(key)
                 .compact();
 
         return new TokenDto(
                 "Bearer",
-                token,
-                expiration.getTime()
+                accessToken, accessExp.getTime(),
+                refreshToken, refreshExp.getTime()
         );
     }
 
-    // 서명, 만료 시간, 회원 번호, 권한 검증
-    public boolean validate(String token) {
+    // 서명, 만료 시간, 회원 번호, 권한 토큰 종류 검증
+    public boolean validate(String token, String expectedType) {
         try {
             Claims claims = parse(token);
 
             String subject = claims.getSubject();
             String authority = claims.get(AUTH_KEY, String.class);
+            String type = claims.get(TYPE_KEY, String.class);
 
             if (subject == null || subject.isBlank()) {
                 return false;
@@ -76,9 +95,15 @@ public class TokenProvider {
 
             return memberId > 0
                     && claims.getExpiration() != null
-                    && authority != null
-                    && Arrays.stream(Authority.values())
-                    .anyMatch(value -> value.name().equals(authority));
+                    && expectedType != null
+                    && expectedType.equals(type)
+                    && (REFRESH.equals(type) || (
+                        ACCESS.equals(type)
+                            && authority != null
+                            && Arrays.stream(Authority.values())
+                            .anyMatch(value -> value.name().equals(authority))
+                    )
+            );
 
         } catch (ExpiredJwtException e) {
             log.info("만료된 JWT");
@@ -87,6 +112,11 @@ public class TokenProvider {
         }
 
         return false;
+    }
+
+    // 토큰의 subject(memberId) 가져오기
+    public Long getMemberId(String token) {
+        return Long.valueOf(parse(token).getSubject());
     }
 
     // 검증된 토큰으로 Spring Security 인증 객체 생성
