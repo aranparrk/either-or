@@ -9,6 +9,7 @@ import com.eitheror.backend.repository.MemberRepository;
 import com.eitheror.backend.repository.PollOptionRepository;
 import com.eitheror.backend.repository.PollRepository;
 import com.eitheror.backend.repository.VoteRepository;
+import com.eitheror.backend.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
@@ -64,7 +65,7 @@ public class PollService {
     }
 
     // 투표 등록
-    public PollCreateResDto createPoll(PollCreateReqDto pollCreateReqDto, Long memberId) {
+    public PollCreateResDto createPoll(PollCreateReqDto pollCreateReqDto) {
 
         // 선택지는 반드시 2개
         if (pollCreateReqDto.getOptions() == null
@@ -127,6 +128,9 @@ public class PollService {
                     "제목은 200자 이하로 입력해주세요."
             );
         }
+
+        // JWT에서 로그인한 회원번호 가져오기
+        Long memberId = SecurityUtil.currentMemberId();
 
         // TODO: 로그인 연동 후 작성자 조회 방식 변경
         Optional<Member> member = memberRepository.findById(memberId);

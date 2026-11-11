@@ -1,8 +1,7 @@
 package com.eitheror.backend.controller;
 
-import com.eitheror.backend.dto.LoginRequestDto;
-import com.eitheror.backend.dto.LoginResponseDto;
-import com.eitheror.backend.dto.SignUpRequestDto;
+import com.eitheror.backend.dto.*;
+import com.eitheror.backend.security.SecurityUtil;
 import com.eitheror.backend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,6 +39,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto dto) {
         return ResponseEntity.ok(authService.login(dto));
+    }
+
+    @Operation(summary = "토큰재발급", description = "Refresh Token으로 Access Token을 재발급 합니다.")
+    @PostMapping("/reissue")
+    public ResponseEntity<TokenDto> reissue(@RequestBody ReissueReqDto dto) {
+        return ResponseEntity.ok(authService.reissue(dto.refreshToken()));
+    }
+
+    @Operation(summary = "로그아웃", description = "로그아웃을 합니다.")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        authService.logout(SecurityUtil.currentMemberId());
+        return ResponseEntity.noContent().build();
     }
 
 }

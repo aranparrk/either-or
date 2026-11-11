@@ -26,13 +26,10 @@ public class VoteController {
     @PostMapping("/{id}/choices")
     public ResponseEntity<VoteResDto> createVote(
             @PathVariable Long id,
-            @RequestBody VoteCreateReqDto dto,
-            Authentication authentication
+            @RequestBody VoteCreateReqDto dto
     ) {
-        Long memberId = Long.valueOf(authentication.getName());
-
         return ResponseEntity.ok(
-                voteService.createVote(id, dto, memberId)
+                voteService.createVote(id, dto)
         );
     }
 
@@ -40,13 +37,11 @@ public class VoteController {
     @PutMapping("/{id}/choices")
     public ResponseEntity<VoteResDto> updateVote(
             @PathVariable Long id,
-            @RequestBody VoteCreateReqDto dto,
-            Authentication authentication
+            @RequestBody VoteCreateReqDto dto
     ) {
-        Long memberId = Long.valueOf(authentication.getName());
 
         return ResponseEntity.ok(
-                voteService.updateVote(id, dto, memberId)
+                voteService.updateVote(id, dto)
         );
     }
 
@@ -59,6 +54,7 @@ public class VoteController {
         // 비로그인 상태에서는 기존처럼 null 전달
         Long memberId = null;
 
+        // 로그인 상태에서는 JWT 인증 정보에서 회원번호 추출
         if (authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {

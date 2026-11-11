@@ -10,5 +10,11 @@ public class LoginResponseDto {
     private long memberId;
     private String email;
     private Integer profileId;
+
+    private String grantType;
     private String accessToken;
+    private long accessTokenExpiresAt;
+
+    private String refreshToken;
+    private long refreshTokenExpiresAt;
 }

@@ -1,5 +1,6 @@
 package com.eitheror.backend.entity;
 
+import com.eitheror.backend.constant.Authority;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,6 +37,11 @@ public class Member {
 
     @Column(name = "reg_date", updatable = false)
     private LocalDateTime regDate;
+
+    // 사용자에게 ROLE_USER(일반회원) 권한을 주기 위해 authority 추가
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Authority authority;
 
     @PrePersist
     public void prePersist() {

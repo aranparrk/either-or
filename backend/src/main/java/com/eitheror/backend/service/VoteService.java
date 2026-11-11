@@ -12,6 +12,7 @@ import com.eitheror.backend.repository.MemberRepository;
 import com.eitheror.backend.repository.PollOptionRepository;
 import com.eitheror.backend.repository.PollRepository;
 import com.eitheror.backend.repository.VoteRepository;
+import com.eitheror.backend.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -35,7 +36,7 @@ public class VoteService {
     private final VoteRepository voteRepository;
 
     // 투표 참여
-    public VoteResDto createVote(Long pollId, VoteCreateReqDto voteCreateReqDto, long memberId) {
+    public VoteResDto createVote(Long pollId, VoteCreateReqDto voteCreateReqDto) {
         // 투표 게시물이 있는지 확인
         Optional<Poll> poll = pollRepository.findById(pollId);
 
@@ -78,6 +79,9 @@ public class VoteService {
                     "해당 투표의 선택지가 아닙니다."
             );
         }
+
+        // JWT에서 로그인한 회원번호 가져오기
+        Long memberId = SecurityUtil.currentMemberId();
 
         // 회원 존재 여부 검사
         Optional<Member> member = memberRepository.findById(memberId);
@@ -113,7 +117,7 @@ public class VoteService {
     }
 
     // 선택 변경
-    public VoteResDto updateVote(Long pollId, VoteCreateReqDto voteCreateReqDto, long memberId) {
+    public VoteResDto updateVote(Long pollId, VoteCreateReqDto voteCreateReqDto) {
         // 투표 게시물이 있는지 확인
         Optional<Poll> poll = pollRepository.findById(pollId);
 
@@ -156,6 +160,9 @@ public class VoteService {
                     "해당 투표의 선택지가 아닙니다."
             );
         }
+
+        // JWT에서 로그인한 회원번호 가져오기
+        Long memberId = SecurityUtil.currentMemberId();
 
         // 회원 존재 여부 검사
         Optional<Member> member = memberRepository.findById(memberId);
