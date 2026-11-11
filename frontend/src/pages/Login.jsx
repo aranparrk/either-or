@@ -160,6 +160,7 @@ const Login = () => {
 
       // JWT 및 회원 정보 저장
       localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("isLogin", "TRUE");
       localStorage.setItem("email", data.email);
       localStorage.setItem("profileId", String(data.profileId));
