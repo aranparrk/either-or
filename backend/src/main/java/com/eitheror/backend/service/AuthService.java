@@ -211,6 +211,7 @@ public class AuthService {
 
         member.setEmail(email);
         member.setProfileId(dto.getProfileId());
+        member.setAuthority(Authority.ROLE_USER);
         // 비밀번호는 signUp()에서 암호화한 후 별도로 설정
 
         return member;

@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,14 +40,10 @@ public class PollController {
     @Operation(summary = "투표 등록", description = "투표를 등록합니다.")
     @PostMapping
     public ResponseEntity<PollCreateResDto> createPoll(
-            @RequestBody PollCreateReqDto dto,
-            Authentication authentication
+            @RequestBody PollCreateReqDto dto
     ) {
-        // JWT 인증 정보에서 회원 번호 추출
-        Long memberId = Long.valueOf(authentication.getName());
-
         return ResponseEntity.ok(
-                pollService.createPoll(dto, memberId)
+                pollService.createPoll(dto)
         );
     }
 }
