@@ -117,6 +117,7 @@ const SignUp = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPwd, setInputPwd] = useState("");
   const [inputProfileId, setInputProfileId] = useState(0);
+  const [inputPwdConfirm, setInputPwdConfirm] = useState("");
   const [emailStatus, setEmailStatus] = useState("idle");
 
   const nav = useNavigate();
@@ -124,6 +125,8 @@ const SignUp = () => {
   const isEmail = EMAIL_REGEX.test(inputEmail);
   const isPwd = PWD_REGEX.test(inputPwd);
   const isProfileId = inputProfileId >= 1 && inputProfileId <= 5;
+  const isPwdConfirm =
+    inputPwdConfirm.length > 0 && inputPwd === inputPwdConfirm;
 
   const selectProfile = (profileId) => {
     setInputProfileId(profileId);
@@ -160,7 +163,7 @@ const SignUp = () => {
   }, [inputEmail, isEmail]);
 
   const isEmailOk = isEmail && emailStatus === "available";
-  const isAllValid = isEmailOk && isPwd && isProfileId;
+  const isAllValid = isEmailOk && isPwd && isPwdConfirm && isProfileId;
 
   const getEmailMessage = () => {
     if (!inputEmail) return "";
@@ -187,7 +190,7 @@ const SignUp = () => {
     const response = await AxiosApi.memberSignup(
       inputEmail,
       inputPwd,
-      inputProfileId
+      inputProfileId,
     );
 
     console.log(response.data);
@@ -251,6 +254,22 @@ const SignUp = () => {
               (isPwd
                 ? "사용 가능한 비밀번호입니다."
                 : "영문, 숫자, 특수문자 포함 8~20자로 입력하세요.")}
+          </Message>
+        </Field>
+
+        <Label>비밀번호 확인</Label>
+        <Field>
+          <Input
+            type="password"
+            value={inputPwdConfirm}
+            placeholder="비밀번호를 한 번 더 입력해주세요"
+            onChange={(e) => setInputPwdConfirm(e.target.value)}
+          />
+          <Message $valid={isPwdConfirm}>
+            {inputPwdConfirm &&
+              (isPwdConfirm
+                ? "비밀번호가 일치합니다."
+                : "비밀번호가 일치하지 않습니다.")}
           </Message>
         </Field>
 
