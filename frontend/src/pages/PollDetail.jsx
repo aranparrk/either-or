@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import AxiosApi from "../api/AxiosApi";
+import { currentMemberId } from "../api/currentMemberId";
 import styled from "styled-components";
 import CommentItem from "../components/comment/CommentItem";
 import Button from "../components/common/Button";
@@ -193,6 +194,24 @@ const PollImage = styled.img`
 
 const PollDetail = () => {
   const { id } = useParams();
+  const nav = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loadError, setLoadError] = useState("");
+
+  const handleDelete = async () => {
+    if (isDeleting || !window.confirm("투표를 삭제할까요? 연결된 댓글과 투표 기록도 삭제되며 복구할 수 없습니다.")) return;
+    setIsDeleting(true);
+    try {
+      await AxiosApi.pollDelete(id);
+      alert("투표가 삭제되었습니다.");
+      nav("/", { replace: true });
+    } catch (error) {
+      const status = error.response?.status;
+      alert(status === 403 ? "작성자만 삭제할 수 있습니다." : status === 401 ? "로그인이 필요합니다." : "투표 삭제에 실패했습니다.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const [poll, setPoll] = useState(null);
   const [selectedOptionId, setSelectedOptionId] = useState(null);
@@ -205,13 +224,6 @@ const PollDetail = () => {
   const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
-    setPoll(null);
-    setSelectedOptionId(null);
-    setResult(null);
-    setResultError("");
-    setHasVoted(false);
-    setShowResult(false);
-
     AxiosApi.pollDetail(id)
       .then((response) => {
         const pollData = response.data;
@@ -247,6 +259,7 @@ const PollDetail = () => {
       })
       .catch((error) => {
         console.error("투표 상세 조회 실패:", error);
+        setLoadError(error.response?.status === 404 ? "존재하지 않는 투표입니다." : "투표를 불러오지 못했습니다.");
       });
   }, [id]);
 
@@ -259,6 +272,8 @@ const PollDetail = () => {
         console.error("댓글 목록 조회 실패:", error);
       });
   }, [id]);
+
+  if (loadError) return <PageContainer><BackLink to="/">← 투표 목록</BackLink><p>{loadError}</p></PageContainer>;
 
   if (!poll) {
     return <PageContainer>로딩 중...</PageContainer>;
@@ -353,6 +368,12 @@ const PollDetail = () => {
 
       <PollHeader>
         <PollTitle>{poll.title}</PollTitle>
+        {currentMemberId() === String(poll.authorId) && (
+          <ButtonRow style={{ gap: "12px" }}>
+            <Button enabled={!isDeleting} size="short" onClick={() => nav(`/votes/${id}/edit`)}>수정</Button>
+            <Button enabled={!isDeleting} size="short" onClick={handleDelete}>{isDeleting ? "삭제 중..." : "삭제"}</Button>
+          </ButtonRow>
+        )}
 
         <PollMeta>
           <StatusBadge $closed={isClosed}>
@@ -445,7 +466,20 @@ const PollDetail = () => {
           <Notice>아직 댓글이 없습니다.</Notice>
         ) : (
           comments.map((comment) => (
-            <CommentItem key={comment.commentId} comment={comment} />
+            <CommentItem
+              key={comment.commentId}
+              comment={comment}
+              onUpdated={(updatedComment) => {
+                setComments((previous) => previous.map((item) =>
+                  item.commentId === updatedComment.commentId ? updatedComment : item
+                ));
+              }}
+              onDeleted={(deletedId) => {
+                setComments((previous) =>
+                  previous.filter((item) => item.commentId !== deletedId)
+                );
+              }}
+            />
           ))
         )}
         <CommentInput
@@ -464,4 +498,10 @@ const PollDetail = () => {
   );
 };
 
-export default PollDetail;
+// 다른 투표로 이동할 때 화면 상태를 새로 시작합니다.
+const PollDetailPage = () => {
+  const { id } = useParams();
+  return <PollDetail key={id} />;
+};
+
+export default PollDetailPage;

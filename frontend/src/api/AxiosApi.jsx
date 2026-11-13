@@ -13,9 +13,9 @@ api.interceptors.request.use((config) => {
 
   // 로그인·회원가입 등 인증 API에는 기존 토큰을 보내지 않음
   const isPublicAuthRequest = [
-      "/api/auth/login",
-      "/api/auth/singup",
-      "/api/auth/reissue"
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/auth/reissue",
   ].includes(config.url);
 
   if (accessToken && !isPublicAuthRequest) {
@@ -71,7 +71,7 @@ api.interceptors.response.use(
       // 이미 재발급 요청이 진행 중이 아니라면 새로 요청
       if (!refreshPromise) {
         refreshPromise = api
-            // 백엔드에 토큰재발급 요청
+          // 백엔드에 토큰재발급 요청
           .post("/api/auth/reissue", {
             refreshToken: refreshToken,
           })
@@ -98,7 +98,6 @@ api.interceptors.response.use(
 
       // 원래 요청 다시 실행
       return api(originalRequest);
-
     } catch (refreshError) {
       // 재발급 실패 시 로그인 정보 삭제
       localStorage.removeItem("accessToken");
@@ -160,6 +159,9 @@ const AxiosApi = {
     return await api.get(`/api/votes/${id}`);
   },
 
+  pollUpdate: (id, data) => api.put(`/api/votes/${id}`, data),
+  pollDelete: (id) => api.delete(`/api/votes/${id}`),
+
   // 투표 등록
   pollCreate: async (title, content, options, deadline, contentImage) => {
     return await api.post("/api/votes", {
@@ -208,6 +210,18 @@ const AxiosApi = {
     return await api.post(`/api/votes/${pollId}/comments`, {
       content,
     });
+  },
+
+  // 댓글 수정
+  commentUpdate: async (pollId, commentId, content) => {
+    return await api.put(`/api/votes/${pollId}/comments/${commentId}`, {
+      content,
+    });
+  },
+
+  // 댓글 삭제
+  commentDelete: async (pollId, commentId) => {
+    return await api.delete(`/api/votes/${pollId}/comments/${commentId}`);
   },
 };
 

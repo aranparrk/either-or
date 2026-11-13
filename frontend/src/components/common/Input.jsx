@@ -21,9 +21,10 @@ const StyledInput = styled.input`
   }
 `;
 
-const Input = ({ type = "text", value, onChange, placeholder }) => {
+const Input = ({ type = "text", value, onChange, placeholder, disabled = false }) => {
   return (
     <StyledInput
+      disabled={disabled}
       type={type}
       placeholder={placeholder}
       value={value}
