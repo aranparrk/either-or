@@ -16,8 +16,11 @@ import com.eitheror.backend.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -34,6 +37,7 @@ public class VoteService {
     private final PollRepository pollRepository;
     private final PollOptionRepository pollOptionRepository;
     private final VoteRepository voteRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // 투표 참여
     public VoteResDto createVote(Long pollId, VoteCreateReqDto voteCreateReqDto) {
@@ -112,6 +116,8 @@ public class VoteService {
 
         Vote savedVote = voteRepository.save(newVote);
 
+        notifyPollUpdated(pollId);
+
         return toDto(savedVote);
 
     }
@@ -186,6 +192,9 @@ public class VoteService {
 
         Vote updateVote = vote.get();
         updateVote.setPollOption(option.get());
+
+        notifyPollUpdated(pollId);
+
 
         return toDto(updateVote);
     }
@@ -271,5 +280,19 @@ public class VoteService {
         voteResDto.setOptionId(vote.getPollOption().getOptionId());
 
         return voteResDto;
+    }
+
+    private void notifyPollUpdated(Long pollId) {
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        messagingTemplate.convertAndSend(
+                                "/topic/polls/" + pollId,
+                                "UPDATED"
+                        );
+                    }
+                }
+        );
     }
 }
