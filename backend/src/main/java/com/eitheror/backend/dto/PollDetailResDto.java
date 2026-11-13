@@ -12,6 +12,8 @@ import java.util.List;
 @NoArgsConstructor
 public class PollDetailResDto {
     private Long pollId;
+    private Long authorId;
+    private long totalVotes;
     private String title;
     private String content;
     private LocalDateTime regDate;

@@ -37,6 +37,20 @@ public class PollController {
         return ResponseEntity.ok(pollService.getPollDetail(id));
     }
 
+    @PutMapping("/{id}")
+    @Operation(summary = "투표 수정", description = "작성자만 수정할 수 있습니다.")
+    public ResponseEntity<PollDetailResDto> updatePoll(@PathVariable Long id,
+                                                     @RequestBody PollCreateReqDto dto) {
+        return ResponseEntity.ok(pollService.updatePoll(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "투표 삭제", description = "작성자만 삭제할 수 있습니다.")
+    public ResponseEntity<Void> deletePoll(@PathVariable Long id) {
+        pollService.deletePoll(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "투표 등록", description = "투표를 등록합니다.")
     @PostMapping
     public ResponseEntity<PollCreateResDto> createPoll(
