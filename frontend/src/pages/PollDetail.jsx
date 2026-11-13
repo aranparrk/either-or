@@ -169,6 +169,7 @@ const ButtonRow = styled.div`
 `;
 
 const ResultBar = styled.div`
+  display: flex;
   width: 100%;
   height: 12px;
   background-color: #e9e9eb;
@@ -178,8 +179,34 @@ const ResultBar = styled.div`
 
 const ResultFill = styled.div`
   height: 100%;
-  background-color: #373a40;
-  border-radius: 6px;
+  background-color: ${({ $second }) => ($second ? "#a8b5c7" : "#373a40")};
+  transition: width 0.2s ease;
+`;
+
+const ResultLabels = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 12px;
+
+  > div {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  > div:last-child {
+    text-align: right;
+  }
+`;
+
+const ResultDot = styled.span`
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background-color: ${({ $second }) => ($second ? "#a8b5c7" : "#373a40")};
 `;
 
 // 상세페이지에 이미지 추가
@@ -399,25 +426,33 @@ const PollDetail = () => {
             <>
               <p>총 {result.totalVotes}표</p>
 
-              {(poll.options ?? []).map((option) => {
-                const optionResult = result.options.find(
-                  (item) => item.optionId === option.optionId
-                );
-
-                return (
-                  <div key={option.optionId}>
-                    <p>
-                      {option.content} : {optionResult?.voteCount ?? 0}표 (
-                      {(optionResult?.percentage ?? 0).toFixed(1)}%)
-                    </p>
-                    <ResultBar>
-                      <ResultFill
-                        style={{ width: `${optionResult?.percentage ?? 0}%` }}
-                      />
-                    </ResultBar>
-                  </div>
-                );
-              })}
+              <ResultLabels>
+                {(poll.options ?? []).map((option, index) => {
+                  const optionResult = result.options.find(
+                    (item) => item.optionId === option.optionId
+                  );
+                  return (
+                    <div key={option.optionId}>
+                      <p><ResultDot $second={index === 1} />{option.content}</p>
+                      <span>{optionResult?.voteCount ?? 0}표 · {(optionResult?.percentage ?? 0).toFixed(1)}%</span>
+                    </div>
+                  );
+                })}
+              </ResultLabels>
+              <ResultBar aria-hidden="true">
+                {(poll.options ?? []).map((option, index) => {
+                  const optionResult = result.options.find(
+                    (item) => item.optionId === option.optionId
+                  );
+                  return (
+                    <ResultFill
+                      key={option.optionId}
+                      $second={index === 1}
+                      style={{ width: `${optionResult?.percentage ?? 0}%` }}
+                    />
+                  );
+                })}
+              </ResultBar>
 
               {!isClosed && (
                 <VoteButton
