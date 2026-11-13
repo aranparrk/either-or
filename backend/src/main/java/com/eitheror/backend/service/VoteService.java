@@ -38,7 +38,7 @@ public class VoteService {
     // 투표 참여
     public VoteResDto createVote(Long pollId, VoteCreateReqDto voteCreateReqDto) {
         // 투표 게시물이 있는지 확인
-        Optional<Poll> poll = pollRepository.findById(pollId);
+        Optional<Poll> poll = pollRepository.findByIdForUpdate(pollId);
 
         if (poll.isEmpty()) {
             throw new ResponseStatusException(
@@ -119,7 +119,7 @@ public class VoteService {
     // 선택 변경
     public VoteResDto updateVote(Long pollId, VoteCreateReqDto voteCreateReqDto) {
         // 투표 게시물이 있는지 확인
-        Optional<Poll> poll = pollRepository.findById(pollId);
+        Optional<Poll> poll = pollRepository.findByIdForUpdate(pollId);
 
         if (poll.isEmpty()) {
             throw new ResponseStatusException(

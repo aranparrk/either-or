@@ -32,6 +32,7 @@ public class PollService {
     private final PollOptionRepository pollOptionRepository;
     private final MemberRepository memberRepository;
     private final VoteRepository voteRepository;
+    private final com.eitheror.backend.repository.CommentRepository commentRepository;
 
     // 투표 목록 조회
     @Transactional(readOnly = true)
@@ -67,67 +68,7 @@ public class PollService {
     // 투표 등록
     public PollCreateResDto createPoll(PollCreateReqDto pollCreateReqDto) {
 
-        // 선택지는 반드시 2개
-        if (pollCreateReqDto.getOptions() == null
-                || pollCreateReqDto.getOptions().size() != 2) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "선택지는 반드시 2개여야 합니다."
-            );
-        }
-
-        // 선택지 내용 검사
-        for (String option : pollCreateReqDto.getOptions()) {
-            if (option == null || option.isBlank()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "선택지 내용을 입력해주세요."
-                );
-            }
-
-            if (option.length() > 255) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "선택지는 255자 이하로 입력해주세요."
-                );
-            }
-        }
-
-        // 마감일시 필수 입력 검사
-        if (pollCreateReqDto.getDeadline() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "마감일시를 입력해주세요."
-            );
-        }
-
-        // 마감일시는 현재보다 미래여야 함
-        if (!pollCreateReqDto.getDeadline().isAfter(LocalDateTime.now())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "마감일시는 현재 이후로 설정해야 합니다."
-            );
-        }
-
-        // 제목 또는 내용 빈문자열 검사
-        if (pollCreateReqDto.getTitle() == null
-                || pollCreateReqDto.getTitle().isBlank()
-                || pollCreateReqDto.getContent() == null
-                || pollCreateReqDto.getContent().isBlank()) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "제목 또는 내용을 입력해주세요."
-            );
-        }
-
-        // 제목 길이 검사
-        if (pollCreateReqDto.getTitle().length() > 200) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "제목은 200자 이하로 입력해주세요."
-            );
-        }
+        validatePoll(pollCreateReqDto, null);
 
         // JWT에서 로그인한 회원번호 가져오기
         Long memberId = SecurityUtil.currentMemberId();
@@ -184,6 +125,116 @@ public class PollService {
         return resDto;
     }
 
+    private void validatePoll(PollCreateReqDto pollCreateReqDto, LocalDateTime existingDeadline) {
+        // 선택지는 반드시 2개
+        if (pollCreateReqDto.getOptions() == null
+                || pollCreateReqDto.getOptions().size() != 2) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "선택지는 반드시 2개여야 합니다."
+            );
+        }
+
+        // 선택지 내용 검사
+        for (String option : pollCreateReqDto.getOptions()) {
+            if (option == null || option.isBlank()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "선택지 내용을 입력해주세요."
+                );
+            }
+
+            if (option.length() > 255) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "선택지는 255자 이하로 입력해주세요."
+                );
+            }
+        }
+
+        // 마감일시 필수 입력 검사
+        if (pollCreateReqDto.getDeadline() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "마감일시를 입력해주세요."
+            );
+        }
+
+        // 마감일시는 현재보다 미래여야 함
+        if (!pollCreateReqDto.getDeadline().equals(existingDeadline)
+                && !pollCreateReqDto.getDeadline().isAfter(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "마감일시는 현재 이후로 설정해야 합니다."
+            );
+        }
+
+        // 제목 또는 내용 빈문자열 검사
+        if (pollCreateReqDto.getTitle() == null
+                || pollCreateReqDto.getTitle().isBlank()
+                || pollCreateReqDto.getContent() == null
+                || pollCreateReqDto.getContent().isBlank()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "제목 또는 내용을 입력해주세요."
+            );
+        }
+
+        // 제목 길이 검사
+        if (pollCreateReqDto.getTitle().length() > 200) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "제목은 200자 이하로 입력해주세요."
+            );
+        }
+
+        if (pollCreateReqDto.getContentImage() != null && pollCreateReqDto.getContentImage().length() > 1000) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지 주소가 너무 깁니다.");
+        }
+    }
+
+    private Poll ownedPoll(Long pollId) {
+        Long memberId = SecurityUtil.currentMemberId();
+        Poll poll = pollRepository.findByIdForUpdate(pollId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 투표가 존재하지 않습니다."));
+        if (!poll.getMember().getMemberId().equals(memberId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "작성자만 수정하거나 삭제할 수 있습니다.");
+        }
+        return poll;
+    }
+
+    public PollDetailResDto updatePoll(Long pollId, PollCreateReqDto dto) {
+        Poll poll = ownedPoll(pollId);
+        validatePoll(dto, poll.getDeadline());
+        List<PollOption> options = new ArrayList<>(pollOptionRepository.findByPoll_PollId(pollId));
+        options.sort(java.util.Comparator.comparing(PollOption::getOptionId));
+        if (options.size() != 2) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "선택지 정보를 확인해주세요.");
+        }
+        boolean changed = !options.get(0).getContent().equals(dto.getOptions().get(0))
+                || !options.get(1).getContent().equals(dto.getOptions().get(1));
+        if (changed && voteRepository.countByPoll_PollId(pollId) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "참여자가 있는 투표는 선택지를 수정할 수 없습니다.");
+        }
+        poll.setTitle(dto.getTitle());
+        poll.setContent(dto.getContent());
+        poll.setContentImage(dto.getContentImage());
+        poll.setDeadline(dto.getDeadline());
+        for (int i = 0; i < options.size(); i++) {
+            options.get(i).setContent(dto.getOptions().get(i));
+        }
+        return toDetailDto(poll);
+    }
+
+    public void deletePoll(Long pollId) {
+        Poll poll = ownedPoll(pollId);
+        commentRepository.deleteAllByPollId(pollId);
+        voteRepository.deleteAllByPollId(pollId);
+        pollOptionRepository.deleteAllByPollId(pollId);
+        pollRepository.delete(poll);
+    }
+
     // 목록 조회 DTO 변환
     private PollListResDto toDto(Poll poll) {
         PollListResDto pollListResDto = new PollListResDto();
@@ -206,6 +257,8 @@ public class PollService {
         PollDetailResDto pollDetailResDto = new PollDetailResDto();
 
         pollDetailResDto.setPollId(poll.getPollId());
+        pollDetailResDto.setAuthorId(poll.getMember().getMemberId());
+        pollDetailResDto.setTotalVotes(voteRepository.countByPoll_PollId(poll.getPollId()));
         pollDetailResDto.setTitle(poll.getTitle());
         pollDetailResDto.setContent(poll.getContent());
         pollDetailResDto.setContentImage(poll.getContentImage()); // 상세 조회에서 이미지 추가
@@ -213,6 +266,8 @@ public class PollService {
         // 해당 게시글에 속한 선택지 조회
         List<PollOption> options =
                 pollOptionRepository.findByPoll_PollId(poll.getPollId());
+
+        options.sort(java.util.Comparator.comparing(PollOption::getOptionId));
 
         // Entity → DTO 변환
         List<PollOptionResDto> optionDtos = new ArrayList<>();

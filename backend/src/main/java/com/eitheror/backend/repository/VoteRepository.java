@@ -9,6 +9,10 @@ import java.util.Optional;
 
 @Repository
 public interface VoteRepository extends JpaRepository<Vote, Long> {
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("delete from Vote e where e.poll.pollId = :pollId")
+    void deleteAllByPollId(@org.springframework.data.repository.query.Param("pollId") Long pollId);
+
 
     // 특정 회원의 투표 기록 조회
     Optional<Vote> findByMember_MemberIdAndPoll_PollId(

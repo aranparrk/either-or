@@ -8,6 +8,10 @@ import java.util.List;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("delete from Comment e where e.poll.pollId = :pollId")
+    void deleteAllByPollId(@org.springframework.data.repository.query.Param("pollId") Long pollId);
+
     List<Comment> findByPoll_PollIdOrderByRegDateAsc(Long pollId);
 }
 
