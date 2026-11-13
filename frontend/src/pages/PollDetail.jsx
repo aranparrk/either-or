@@ -5,6 +5,7 @@ import { currentMemberId } from "../api/currentMemberId";
 import styled from "styled-components";
 import CommentItem from "../components/comment/CommentItem";
 import Button from "../components/common/Button";
+import { Client } from "@stomp/stompjs";
 
 const PageContainer = styled.div`
   width: 100%;
@@ -226,7 +227,13 @@ const PollDetail = () => {
   const [loadError, setLoadError] = useState("");
 
   const handleDelete = async () => {
-    if (isDeleting || !window.confirm("투표를 삭제할까요? 연결된 댓글과 투표 기록도 삭제되며 복구할 수 없습니다.")) return;
+    if (
+      isDeleting ||
+      !window.confirm(
+        "투표를 삭제할까요? 연결된 댓글과 투표 기록도 삭제되며 복구할 수 없습니다."
+      )
+    )
+      return;
     setIsDeleting(true);
     try {
       await AxiosApi.pollDelete(id);
@@ -234,7 +241,13 @@ const PollDetail = () => {
       nav("/", { replace: true });
     } catch (error) {
       const status = error.response?.status;
-      alert(status === 403 ? "작성자만 삭제할 수 있습니다." : status === 401 ? "로그인이 필요합니다." : "투표 삭제에 실패했습니다.");
+      alert(
+        status === 403
+          ? "작성자만 삭제할 수 있습니다."
+          : status === 401
+          ? "로그인이 필요합니다."
+          : "투표 삭제에 실패했습니다."
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -257,6 +270,12 @@ const PollDetail = () => {
         setPoll(pollData);
 
         const isClosed = new Date(pollData.deadline) <= new Date();
+
+        // 비로그인 사용자는 진행 중인 결과 조회만 건너뛰고 상세는 표시합니다.
+        const accessToken = localStorage.getItem("accessToken");
+        if (!isClosed && !accessToken) {
+          return;
+        }
 
         // 상세 페이지 진입 시 투표 결과 조회
         AxiosApi.voteResult(id)
@@ -286,7 +305,11 @@ const PollDetail = () => {
       })
       .catch((error) => {
         console.error("투표 상세 조회 실패:", error);
-        setLoadError(error.response?.status === 404 ? "존재하지 않는 투표입니다." : "투표를 불러오지 못했습니다.");
+        setLoadError(
+          error.response?.status === 404
+            ? "존재하지 않는 투표입니다."
+            : "투표를 불러오지 못했습니다."
+        );
       });
   }, [id]);
 
@@ -300,7 +323,42 @@ const PollDetail = () => {
       });
   }, [id]);
 
-  if (loadError) return <PageContainer><BackLink to="/">← 투표 목록</BackLink><p>{loadError}</p></PageContainer>;
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+
+    const client = new Client({
+      brokerURL: `${protocol}//${window.location.host}/ws`,
+
+      onConnect: () => {
+        client.subscribe(`/topic/polls/${id}`, async () => {
+          if (!localStorage.getItem("accessToken")) return;
+
+          try {
+            const response = await AxiosApi.voteResult(id);
+            setResult(response.data);
+          } catch (error) {
+            if (error.response?.status === 403) return;
+
+            console.error("실시간 결과 조회 실패:", error);
+          }
+        });
+      },
+    });
+
+    client.activate();
+
+    return () => {
+      void client.deactivate();
+    };
+  }, [id]);
+
+  if (loadError)
+    return (
+      <PageContainer>
+        <BackLink to="/">← 투표 목록</BackLink>
+        <p>{loadError}</p>
+      </PageContainer>
+    );
 
   if (!poll) {
     return <PageContainer>로딩 중...</PageContainer>;
@@ -397,8 +455,16 @@ const PollDetail = () => {
         <PollTitle>{poll.title}</PollTitle>
         {currentMemberId() === String(poll.authorId) && (
           <ButtonRow style={{ gap: "12px" }}>
-            <Button enabled={!isDeleting} size="short" onClick={() => nav(`/votes/${id}/edit`)}>수정</Button>
-            <Button enabled={!isDeleting} size="short" onClick={handleDelete}>{isDeleting ? "삭제 중..." : "삭제"}</Button>
+            <Button
+              enabled={!isDeleting}
+              size="short"
+              onClick={() => nav(`/votes/${id}/edit`)}
+            >
+              수정
+            </Button>
+            <Button enabled={!isDeleting} size="short" onClick={handleDelete}>
+              {isDeleting ? "삭제 중..." : "삭제"}
+            </Button>
           </ButtonRow>
         )}
 
@@ -433,8 +499,14 @@ const PollDetail = () => {
                   );
                   return (
                     <div key={option.optionId}>
-                      <p><ResultDot $second={index === 1} />{option.content}</p>
-                      <span>{optionResult?.voteCount ?? 0}표 · {(optionResult?.percentage ?? 0).toFixed(1)}%</span>
+                      <p>
+                        <ResultDot $second={index === 1} />
+                        {option.content}
+                      </p>
+                      <span>
+                        {optionResult?.voteCount ?? 0}표 ·{" "}
+                        {(optionResult?.percentage ?? 0).toFixed(1)}%
+                      </span>
                     </div>
                   );
                 })}
@@ -505,9 +577,13 @@ const PollDetail = () => {
               key={comment.commentId}
               comment={comment}
               onUpdated={(updatedComment) => {
-                setComments((previous) => previous.map((item) =>
-                  item.commentId === updatedComment.commentId ? updatedComment : item
-                ));
+                setComments((previous) =>
+                  previous.map((item) =>
+                    item.commentId === updatedComment.commentId
+                      ? updatedComment
+                      : item
+                  )
+                );
               }}
               onDeleted={(deletedId) => {
                 setComments((previous) =>
