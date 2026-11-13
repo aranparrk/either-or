@@ -27,6 +27,7 @@ public class CommentService {
     private final MemberRepository memberRepository;
     private final PollRepository pollRepository;
 
+    // 댓글 작성
     @Transactional
     public CommentResDto createComment(
             Long memberId,
@@ -51,7 +52,7 @@ public class CommentService {
         return new CommentResDto(savedComment);
     }
 
-
+    // 댓글 조회
     @Transactional(readOnly = true)
     public List<CommentResDto> getCommentList(Long pollId) {
         boolean pollExists = pollRepository.existsById(pollId);
@@ -70,6 +71,68 @@ public class CommentService {
         }
 
         return commentResDtos;
+    }
+
+    // 댓글 수정
+    @Transactional
+    public CommentResDto updateComment(Long memberId, Long pollId, Long commentId, CommentCreateReqDto dto) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "댓글이 존재하지 않습니다."
+                ));
+
+        if (!comment.getPoll().getPollId().equals(pollId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "해당 투표의 댓글이 아닙니다."
+            );
+        }
+
+        Member author = comment.getMember();
+        Long authorId = author.getMemberId();
+
+        if (!authorId.equals(memberId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "작성자만 수정할 수 있습니다."
+            );
+        }
+
+        String content = dto.getContent();
+        comment.setContent(content);
+
+        return new CommentResDto(comment);
+
+    }
+
+    // 댓글 삭제
+    @Transactional
+    public void deleteComment(Long memberId, Long pollId, Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "댓글이 존재하지 않습니다."
+                ));
+
+        if (!comment.getPoll().getPollId().equals(pollId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "해당 투표의 댓글이 아닙니다."
+            );
+        }
+
+        Member author = comment.getMember();
+        Long authorId = author.getMemberId();
+
+        if (!authorId.equals(memberId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "작성자만 삭제할 수 있습니다."
+            );
+        }
+
+        commentRepository.delete(comment);
     }
 }
 

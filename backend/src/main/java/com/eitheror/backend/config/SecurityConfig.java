@@ -44,8 +44,8 @@ public class SecurityConfig {
 
                 // 인증 없이 접근 가능한 주소
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.PUT, "/api/votes/*").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/votes/*").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/votes/*", "/api/votes/*/comments/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/votes/*", "/api/votes/*/comments/*").authenticated()
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/votes",

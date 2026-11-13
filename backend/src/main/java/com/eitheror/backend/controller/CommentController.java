@@ -45,4 +45,30 @@ public class CommentController {
         return ResponseEntity.ok(commentService.getCommentList(id));
 
     }
+
+    @PutMapping("/{pollId}/comments/{commentId}")
+    @Operation(summary = "댓글 수정", description = "작성자만 수정할 수 있습니다.")
+    public ResponseEntity<CommentResDto> updateComment(@PathVariable Long pollId,
+                                                       @PathVariable Long commentId,
+                                                       @Valid @RequestBody CommentCreateReqDto dto,
+                                                       Authentication authentication) {
+        Long memberId = Long.valueOf(authentication.getName());
+
+        return ResponseEntity.ok(
+                commentService.updateComment(memberId, pollId, commentId, dto)
+        );
+    }
+
+    // 댓글 삭제
+    @DeleteMapping("/{pollId}/comments/{commentId}")
+    @Operation(summary = "댓글 삭제", description = "작성자만 삭제할 수 있습니다.")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long pollId,
+                                                       @PathVariable Long commentId,
+                                                       Authentication authentication) {
+        Long memberId = Long.valueOf(authentication.getName());
+
+        commentService.deleteComment(memberId, pollId, commentId);
+
+        return ResponseEntity.noContent().build();
+    }
 }
