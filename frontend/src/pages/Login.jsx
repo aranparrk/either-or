@@ -165,6 +165,9 @@ const Login = () => {
       localStorage.setItem("email", data.email);
       localStorage.setItem("profileId", String(data.profileId));
 
+      // 로그인 상태 변경 알림
+      window.dispatchEvent(new Event("authChanged"))
+
       nav("/", { replace: true });
     } catch (error) {
       console.error("로그인 오류", error);

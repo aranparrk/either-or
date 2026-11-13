@@ -51,8 +51,8 @@ const PollInfo = styled.div`
 
 // 투표 썸네일
 const PollImage = styled.img`
-  width: 75px;
-  height: 75px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid #d0d0d0;

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import ProfileIcon from "./ProfileIcon.jsx";
@@ -66,10 +67,29 @@ const Header = () => {
   const nav = useNavigate();
 
   // 페이지 이동 시 변경된 로그인 정보를 반영
+  const [isLogin, setIsLogin] = useState(false);
 
-  const isLogin =
-    localStorage.getItem("isLogin") === "TRUE" &&
-    Boolean(localStorage.getItem("accessToken"));
+  useEffect(() => {
+    // 로그인 상태 확인
+    const checkLogin = () => {
+      const login =
+        localStorage.getItem("isLogin") === "TRUE" &&
+        Boolean(localStorage.getItem("accessToken"));
+
+      setIsLogin(login);
+    };
+
+    // 이벤트 감지 시작
+    window.addEventListener("authChanged", checkLogin);
+
+    // 처음 헤더가 나타났을 때 로그인 상태 확인
+    checkLogin();
+
+    // 헤더가 사라질 때 이벤트 감지 정리
+    return () => {
+      window.removeEventListener("authChanged", checkLogin);
+    };
+  }, []);
 
   const onLogout = async () => {
     try {
@@ -83,6 +103,9 @@ const Header = () => {
       localStorage.removeItem("isLogin");
       localStorage.removeItem("email");
       localStorage.removeItem("profileId");
+
+      // 로그아웃 상태 변경 알림
+      window.dispatchEvent(new Event("authChanged"))
 
       nav("/login", { replace: true });
     }
@@ -100,6 +123,7 @@ const Header = () => {
           {isLogin ? (
             <>
               <ProfileIcon />
+              <MenuLink to="/mypage">마이페이지</MenuLink>
               <span>|</span>
               <LogoutButton type="button" onClick={onLogout}>
                 로그아웃
