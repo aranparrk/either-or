@@ -52,6 +52,7 @@ public class SecurityConfig {
                                 "/api/votes/*/comments",
                                 "/api/votes/*/choices"
                         ).authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/member/update").authenticated()
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
