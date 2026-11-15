@@ -1,6 +1,7 @@
-
 import { useState } from "react";
 import styled from "styled-components";
+import AxiosApi from "../api/AxiosApi.jsx";
+import ProfileIconChange from "../components/common/ProfileIconChange.jsx";
 
 const Container = styled.div`
   width: 100%;
@@ -64,9 +65,115 @@ const Content = styled.div`
 `;
 
 
+
+
+// 비밀번호 입력 영역
+const PasswordForm = styled.div`
+  max-width: 450px;
+  margin: 0 auto;
+`;
+
+// 입력창 제목
+const FormTitle = styled.h3`
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 20px;
+  color: #333;
+`;
+
+// 입력 항목 영역
+const InputGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+// 입력 항목 이름
+const InputLabel = styled.label`
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+`;
+
+// 비밀번호 입력창
+const PasswordInput = styled.input`
+  width: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: #36393b;
+  }
+`;
+
+// 비밀번호 변경 버튼
+const SubmitBtn = styled.button`
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 8px;
+  background-color: #36393b;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+
+  &:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+`;
+
+
+
+
 const MyPage = () => {
 
   const [activeTab, setActiveTab] = useState("info");
+
+  // 비밀번호 변경
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [profileId, setProfileId] = useState(
+  Number(localStorage.getItem("profileId")) || 1
+  );
+
+  const handleMemberUpdate = async () => {
+
+      if (newPwd !== confirmPwd) {
+          alert("새 비밀번호가 일치하지 않습니다.");
+          return;
+      }
+
+      try {
+          const response = await AxiosApi.memberUpdate(
+              // undefined : 변경 내용이 없으면 보내지 않음
+              currentPwd || undefined,
+              newPwd || undefined,
+              imageUrl || undefined,
+              profileId || undefined
+          );
+
+          if (response.data === true) {
+              alert("회원 정보가 변경되었습니다.");
+
+              // 비밀번호 입력칸 초기화
+              setCurrentPwd("");
+              setNewPwd("")
+              setConfirmPwd("")
+          }
+
+      } catch (error) {
+          console.error("비밀번호 변경 오류:", error);
+          alert(error.response?.data?.message || "비밀번호 변경을 실패했습니다.");
+      }
+  };
+
 
   return (
     <Container>
@@ -101,7 +208,65 @@ const MyPage = () => {
       {/* 선택한 메뉴에 따라 내용 영역 변경 */}
       <Content>
         {activeTab === "info" && (
-          <h3>회원정보 변경 화면입니다.</h3>
+          <>
+            <ProfileIconChange
+              profileId={profileId}
+              imageUrl={imageUrl}
+              onProfileSelect={(id) => {
+                setProfileId(id);
+                setImageUrl("");
+              }}
+              onImageUploaded={(url) => {
+                setImageUrl(url);
+                setProfileId(null);
+              }}
+            />
+            <PasswordForm>
+
+            <FormTitle>비밀번호 변경</FormTitle>
+
+            <InputGroup>
+              <InputLabel>기존 비밀번호</InputLabel>
+              <PasswordInput
+                type="password"
+                value={currentPwd}
+                onChange={(e) => setCurrentPwd(e.target.value)}
+                placeholder="기존 비밀번호를 입력해 주세요."
+              />
+            </InputGroup>
+
+            <InputGroup>
+              <InputLabel>새 비밀번호</InputLabel>
+              <PasswordInput
+                type="password"
+                value={newPwd}
+                onChange={(e) => setNewPwd(e.target.value)}
+                placeholder="새 비밀번호를 입력해 주세요."
+              />
+            </InputGroup>
+
+            <InputGroup>
+              <InputLabel>새 비밀번호 확인</InputLabel>
+              <PasswordInput
+                type="password"
+                value={confirmPwd}
+                onChange={(e) => setConfirmPwd(e.target.value)}
+                placeholder="새 비밀번호를 다시 입력해 주세요."
+              />
+            </InputGroup>
+
+            <SubmitBtn
+              onClick={handleMemberUpdate}
+              disabled={
+                (newPwd && newPwd !== confirmPwd) ||
+                (newPwd && !currentPwd)
+              }
+            >
+              변경하기
+            </SubmitBtn>
+
+          </PasswordForm>
+          </>
         )}
 
         {activeTab === "poll" && (

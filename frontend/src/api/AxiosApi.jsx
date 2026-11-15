@@ -223,6 +223,27 @@ const AxiosApi = {
   commentDelete: async (pollId, commentId) => {
     return await api.delete(`/api/votes/${pollId}/comments/${commentId}`);
   },
+
+  // ====================================
+  // 마이페이지 API
+  // ====================================
+
+  // 회원 정보 수정
+  memberUpdate: async (currentPwd, newPwd, imageUrl, profileId) => {
+    return await api.patch("/api/member/update", {
+      currentPwd,
+      newPwd,
+      imageUrl,
+      profileId
+    });
+  },
+
+  // 내가 쓴 투표 조회
+
+  // 내가 쓴 댓글 조회
+
+  // 회원탈퇴
+
 };
 
 export default AxiosApi;

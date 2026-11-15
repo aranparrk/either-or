@@ -106,7 +106,7 @@ const Field = styled.div`
 `;
 
 const Message = styled.p`
-  margin: 4px 0 0;
+  margin: 0;
   min-height: 18px;
   text-align: right;
   font-size: 12px;
