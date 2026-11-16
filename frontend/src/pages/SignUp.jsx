@@ -113,6 +113,58 @@ const Message = styled.p`
   color: ${({ $valid }) => ($valid ? "#2e9e4f" : "#e5484d")};
 `;
 
+const SocialDivider = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 8px;
+  color: #888;
+  font-size: 13px;
+  white-space: nowrap;
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-color: #e5e7eb;
+  }
+`;
+
+const KakaoButton = styled.button`
+  && {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    height: 48px;
+    margin-top: 0;
+    padding: 0 16px;
+    border: none;
+    border-radius: 8px;
+    background-color: #fee500;
+    color: #191919;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #fada00;
+    }
+
+    &:active {
+      background-color: #f5d900;
+    }
+
+    &:focus-visible {
+      outline: 3px solid #191919;
+      outline-offset: 2px;
+    }
+  }
+`;
+
 const SignUp = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPwd, setInputPwd] = useState("");
@@ -190,7 +242,7 @@ const SignUp = () => {
     const response = await AxiosApi.memberSignup(
       inputEmail,
       inputPwd,
-      inputProfileId,
+      inputProfileId
     );
 
     console.log(response.data);
@@ -201,6 +253,10 @@ const SignUp = () => {
     } else {
       alert("회원 가입이 실패 했습니다.");
     }
+  };
+
+  const kakaoSignUp = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/kakao";
   };
 
   return (
@@ -279,6 +335,18 @@ const SignUp = () => {
         <Button type="submit" enabled={isAllValid}>
           가입하기
         </Button>
+
+        <SocialDivider>또는 간편 회원가입</SocialDivider>
+
+        <KakaoButton type="button" onClick={kakaoSignUp}>
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12 3C6.477 3 2 6.582 2 11c0 2.85 1.86 5.352 4.66 6.766L5.5 21l4.06-2.435c.79.15 1.607.235 2.44.235 5.523 0 10-3.582 10-8S17.523 3 12 3Z"
+            />
+          </svg>
+          카카오로 계속하기
+        </KakaoButton>
       </Form2>
     </Container>
   );

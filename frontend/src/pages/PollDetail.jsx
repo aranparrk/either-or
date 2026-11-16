@@ -237,7 +237,6 @@ const PollDetail = () => {
     setIsDeleting(true);
     try {
       await AxiosApi.pollDelete(id);
-      alert("투표가 삭제되었습니다.");
       nav("/", { replace: true });
     } catch (error) {
       const status = error.response?.status;
@@ -330,7 +329,6 @@ const PollDetail = () => {
       brokerURL: `${protocol}//${window.location.host}/ws`,
 
       onConnect: () => {
-        console.log("✅ WebSocket 연결 성공");
         client.subscribe(`/topic/polls/${id}`, async () => {
           if (!localStorage.getItem("accessToken")) return;
 
@@ -345,7 +343,6 @@ const PollDetail = () => {
         });
 
         client.subscribe(`/topic/comments/${id}`, async (message) => {
-          console.log("실시간 댓글 알림 수신:", message.body);
           try {
             const response = await AxiosApi.commentList(id);
             setComments(response.data);
@@ -353,7 +350,6 @@ const PollDetail = () => {
             console.error("실시간 댓글 조회 실패:", error);
           }
         });
-        console.log("✅ 댓글 구독 요청 완료:", id);
       },
     });
 
@@ -404,7 +400,6 @@ const PollDetail = () => {
       }
 
       setHasVoted(true);
-      alert("투표가 반영되었습니다.");
 
       // 투표 성공 후 결과 조회
       setResult(null);
@@ -443,7 +438,6 @@ const PollDetail = () => {
     try {
       await AxiosApi.commentCreate(id, commentText);
 
-      alert("댓글이 등록되었습니다.");
       setCommentText("");
 
       const response = await AxiosApi.commentList(id);
