@@ -10,8 +10,11 @@ import com.eitheror.backend.repository.MemberRepository;
 import com.eitheror.backend.repository.PollRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
@@ -26,8 +29,8 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final MemberRepository memberRepository;
     private final PollRepository pollRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    // 댓글 작성
     @Transactional
     public CommentResDto createComment(
             Long memberId,
@@ -49,6 +52,9 @@ public class CommentService {
 
         // 4. 저장 후 응답 DTO로 변환 반환
         Comment savedComment = commentRepository.save(comment);
+
+        notifyCommentUpdated(pollId); // 추가
+
         return new CommentResDto(savedComment);
     }
 
@@ -102,6 +108,8 @@ public class CommentService {
         String content = dto.getContent();
         comment.setContent(content);
 
+        notifyCommentUpdated(pollId); // 추가
+
         return new CommentResDto(comment);
 
     }
@@ -132,7 +140,29 @@ public class CommentService {
             );
         }
 
+        notifyCommentUpdated(pollId); // 추가
+
         commentRepository.delete(comment);
+    }
+
+    private void notifyCommentUpdated(Long pollId) {
+        System.out.println("댓글 알림 메서드 호출: " + pollId);
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        System.out.println("댓글 트랜잭션 커밋 완료");
+
+                        messagingTemplate.convertAndSend(
+                                "/topic/comments/" + pollId,
+                                "UPDATED"
+                        );
+
+                        System.out.println("댓글 WebSocket 알림 전송: " + pollId);
+                    }
+                }
+        );
     }
 }
 
