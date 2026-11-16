@@ -2,6 +2,8 @@ import { useState } from "react";
 import styled from "styled-components";
 import Button from "../components/common/Button.jsx";
 import ProfileChoice from "../components/common/ProfileChoice.jsx";
+import { saveLogin } from "../util/auth.jsx";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   display: flex;
@@ -28,6 +30,8 @@ const SocialSignUp = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [message, setMessage] = useState("");
+
+  const nav = useNavigate();
 
   const isProfileId = inputProfileId >= 1 && inputProfileId <= 5;
 
@@ -68,10 +72,16 @@ const SocialSignUp = () => {
         throw new Error(`회원가입 실패 (${response.status})`);
       }
 
-      // 서버에서 LoginResponseDto(JWT 포함)를 반환
-      // 기존 일반 로그인과 동일한 토큰 저장 처리는 다음 단계에서 연결
+      // fetch 응답을 JSON으로 변환
+      const data = await response.json();
+
+      // JWT 및 회원 정보 저장
+      saveLogin(data);
+
       setCompleted(true);
-      setMessage("회원가입 완료! 로그인 상태 연결은 아직 필요합니다.");
+
+      // 메인 페이지로 이동
+      nav("/", { replace: true });
     } catch (error) {
       console.error("소셜 회원가입 실패:", error);
       setMessage(error.message);

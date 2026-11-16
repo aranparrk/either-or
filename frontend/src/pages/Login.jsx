@@ -4,6 +4,7 @@ import styled from "styled-components";
 import Button from "../components/common/Button";
 import Input from "../components/common/Input";
 import AxiosApi from "../api/AxiosApi";
+import { saveLogin } from "../util/auth";
 
 const Container = styled.div`
   display: flex;
@@ -158,15 +159,7 @@ const Login = () => {
         return;
       }
 
-      // JWT 및 회원 정보 저장
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("isLogin", "TRUE");
-      localStorage.setItem("email", data.email);
-      localStorage.setItem("profileId", String(data.profileId));
-
-      // 로그인 상태 변경 알림
-      window.dispatchEvent(new Event("authChanged"))
+      saveLogin(data);
 
       nav("/", { replace: true });
     } catch (error) {
