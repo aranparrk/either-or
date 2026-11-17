@@ -43,21 +43,18 @@ public class MemberService {
             member.setPwd(pwdEncoder.encode(dto.getNewPwd()));
         }
 
-        // 프로필을 기본 프로필에서 이미지로 변경
+        // 프로필 변경
         if (dto.getImageUrl() != null && !dto.getImageUrl().isBlank()) {
+
+            // 이미지로 변경시 이미지 주소만 변경
             member.setImageUrl(dto.getImageUrl());
-            member.setProfileId(null);
-        }
 
-        // 프로필을 기본 프로필 내에서 변결
-        else if (dto.getProfileId() != null) {
+        } else if (dto.getProfileId() != null) {
 
-            if (dto.getProfileId() < 1 || dto.getProfileId() > 5) {
-                throw new IllegalArgumentException("잘못된 프로필 번호입니다.");
-            }
-
+            // 기본 프로필 선택 시 업로드 이미지 주소 제거
             member.setProfileId(dto.getProfileId());
             member.setImageUrl(null);
+
         }
 
         return true;
