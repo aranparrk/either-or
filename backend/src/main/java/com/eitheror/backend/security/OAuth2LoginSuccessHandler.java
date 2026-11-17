@@ -2,7 +2,9 @@
 package com.eitheror.backend.security;
 
 import com.eitheror.backend.constant.SocialProvider;
+import com.eitheror.backend.dto.PendingSocialLogin;
 import com.eitheror.backend.dto.PendingSocialSignup;
+import com.eitheror.backend.entity.Member;
 import com.eitheror.backend.service.SocialAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,6 +19,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -46,9 +50,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String providerId = oauthToken.getName();
 
         // 4. 이미 연결된 소셜 계정인지 조회
-        boolean exists = socialAuthService
-                .findSocialMember(provider, providerId)
-                .isPresent();
+        Optional<Member> socialMember = socialAuthService
+                .findSocialMember(provider, providerId);
+
+        boolean exists = socialMember.isPresent();
 
         // 신규 회원이면 소셜 인증 정보를 세션에 임시 저장
         if (!exists) {
@@ -75,8 +80,25 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         response.setContentType("text/plain;charset=UTF-8");
 
         if (exists) {
-            // 기존 회원 로그인은 다음 단계에서 JWT 연결
-            response.getWriter().write("소셜 인증 성공 - 기존 회원");
+            String code = UUID.randomUUID().toString();
+
+            PendingSocialLogin pendingLogin = new PendingSocialLogin(
+                    code,
+                    socialMember.orElseThrow().getMemberId(),
+                    Instant.now().plus(Duration.ofSeconds(60))
+            );
+
+            request.getSession().setAttribute(
+                    "PENDING_SOCIAL_LOGIN",
+                    pendingLogin
+            );
+
+            // 이전 회원가입 대기 정보가 남아 있으면 제거
+            request.getSession().removeAttribute("PENDING_SOCIAL_SIGNUP");
+
+            response.sendRedirect(
+                    "http://localhost:5173/oauth/callback?code=" + code
+            );
         } else {
             // 신규 회원이면 React 프로필 선택 화면으로 이동
             response.sendRedirect("http://localhost:5173/oauth/signup");

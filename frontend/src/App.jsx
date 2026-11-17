@@ -9,6 +9,7 @@ import PollDetail from "./pages/PollDetail.jsx";
 import PollCreate from "./pages/PollCreate.jsx";
 import MyPage from "./pages/MyPage.jsx";
 import SocialSignUp from "./pages/SocialSignUp.jsx";
+import SocialLoginCallback from "./pages/SocialLoginCallback.jsx";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/oauth/signup" element={<SocialSignUp />} />
+        <Route path="/oauth/callback" element={<SocialLoginCallback />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/votes/new" element={<PollCreate key="create" />} />
         <Route path="/votes/:id/edit" element={<PollCreate key="edit" />} />

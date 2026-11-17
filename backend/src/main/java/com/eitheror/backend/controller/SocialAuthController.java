@@ -2,6 +2,7 @@
 package com.eitheror.backend.controller;
 
 import com.eitheror.backend.dto.LoginResponseDto;
+import com.eitheror.backend.dto.PendingSocialLogin;
 import com.eitheror.backend.dto.PendingSocialSignup;
 import com.eitheror.backend.dto.SocialSignUpRequestDto;
 import com.eitheror.backend.entity.Member;
@@ -79,5 +80,65 @@ public class SocialAuthController {
         session.removeAttribute("PENDING_SOCIAL_SIGNUP");
 
         return response;
+    }
+
+    public record SocialLoginRequest(String code) {
+    }
+
+    // 일회용 로그인 코드 → JWT 교환
+    @PostMapping("/login")
+    public LoginResponseDto login(
+            @RequestBody SocialLoginRequest dto,
+            HttpServletRequest request
+    ) {
+        HttpSession session = request.getSession(false);
+
+        if (session == null || dto.code() == null || dto.code().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "소셜 로그인을 다시 진행해 주세요."
+            );
+        }
+
+        Long memberId;
+
+        // 동시에 같은 코드를 보내도 한 요청만 사용할 수 있도록 처리
+        synchronized (session) {
+            PendingSocialLogin pending =
+                    (PendingSocialLogin) session.getAttribute(
+                            "PENDING_SOCIAL_LOGIN"
+                    );
+
+            if (pending == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "소셜 로그인을 다시 진행해 주세요."
+                );
+            }
+
+            // 만료 시각과 같거나 이후라면 사용 불가
+            if (!Instant.now().isBefore(pending.expiresAt())) {
+                session.removeAttribute("PENDING_SOCIAL_LOGIN");
+
+                throw new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "로그인 코드가 만료되었습니다."
+                );
+            }
+
+            if (!pending.code().equals(dto.code())) {
+                throw new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "유효하지 않은 로그인 코드입니다."
+                );
+            }
+
+            memberId = pending.memberId();
+
+            // JWT 발급 전에 삭제하여 코드 재사용 방지
+            session.removeAttribute("PENDING_SOCIAL_LOGIN");
+        }
+
+        return authService.socialLogin(memberId);
     }
 }

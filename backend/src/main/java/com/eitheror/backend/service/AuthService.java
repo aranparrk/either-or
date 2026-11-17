@@ -128,6 +128,17 @@ public class AuthService {
         );
     }
 
+    // 소셜 인증으로 확인한 기존 회원의 로그인 처리
+    public LoginResponseDto socialLogin(Long memberId) {
+        Member member = memberRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "회원이 존재하지 않습니다."
+                ));
+
+        return issueLoginTokens(member);
+    }
+
     // 유효하지 않은 Refresh Token 예외 처리
     private ResponseStatusException invalidRefresh() {
         return new ResponseStatusException(
