@@ -1,6 +1,8 @@
-
 import { useState } from "react";
 import styled from "styled-components";
+import ChangeProfile from "../components/myPage/ChangeProfile.jsx";
+import ChangePwd from "../components/myPage/ChangePwd.jsx";
+import EditMember from "../components/myPage/EditMember.jsx";
 
 const Container = styled.div`
   width: 100%;
@@ -101,7 +103,9 @@ const MyPage = () => {
       {/* 선택한 메뉴에 따라 내용 영역 변경 */}
       <Content>
         {activeTab === "info" && (
-          <h3>회원정보 변경 화면입니다.</h3>
+          <>
+            <EditMember/>
+          </>
         )}
 
         {activeTab === "poll" && (

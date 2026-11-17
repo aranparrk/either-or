@@ -37,6 +37,7 @@ const ProfileImage = styled.img`
   }
 `;
 
+// 회원가입 때 선택하는 프로필
 const ProfileChoice = ({ selectedId, onSelect }) => {
   return (
     <ProfileList>
