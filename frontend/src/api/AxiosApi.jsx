@@ -110,7 +110,7 @@ api.interceptors.response.use(
 
       return Promise.reject(refreshError);
     }
-  }
+  },
 );
 
 const AxiosApi = {
@@ -222,6 +222,20 @@ const AxiosApi = {
   // 댓글 삭제
   commentDelete: async (pollId, commentId) => {
     return await api.delete(`/api/votes/${pollId}/comments/${commentId}`);
+  },
+
+  // ====================================
+  // 마이페이지 API
+  // ====================================
+
+  // 내가 작성한 투표 조회
+  myPollList: async () => {
+    return await api.get("/api/mypage/polls");
+  },
+
+  // 내가 작성한 댓글 조회
+  myCommentList: async () => {
+    return await api.get("/api/mypage/comments");
   },
 };
 
