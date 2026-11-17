@@ -5,6 +5,8 @@ import Button from "../components/common/Button";
 import Input from "../components/common/Input";
 import AxiosApi from "../api/AxiosApi";
 import { saveLogin } from "../util/auth";
+import GoogleButton from "../components/common/GoogleButton.jsx";
+import KakaoButton from "../components/common/KakaoButton.jsx";
 
 const Container = styled.div`
   display: flex;
@@ -131,42 +133,6 @@ const SignUpLink = styled(Link)`
   }
 `;
 
-const KakaoButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 9px;
-  background-color: #fee500;
-  color: #191919;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.2s;
-
-  &:hover:not(:disabled) {
-    background-color: #fada00;
-    transform: translateY(-1px);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  &:focus-visible {
-    outline: 3px solid #191919;
-    outline-offset: 3px;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
 
 const Login = () => {
   const [inputEmail, setInputEmail] = useState("");
@@ -179,6 +145,10 @@ const Login = () => {
 
   const kakaoLogin = () => {
     window.location.href = "http://localhost:8080/oauth2/authorization/kakao";
+  };
+
+  const googleLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
 
   const onSubmit = async (e) => {
@@ -271,15 +241,10 @@ const Login = () => {
         <Button type="submit" enabled={isValid && !isSubmitting}>
           {isSubmitting ? "로그인 중..." : "로그인"}
         </Button>
-        <KakaoButton type="button" disabled={isSubmitting} onClick={kakaoLogin}>
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M12 3C6.477 3 2 6.582 2 11c0 2.85 1.86 5.352 4.66 6.766L5.5 21l4.06-2.435c.79.15 1.607.235 2.44.235 5.523 0 10-3.582 10-8S17.523 3 12 3Z"
-            />
-          </svg>
+        <KakaoButton disabled={isSubmitting} onClick={kakaoLogin}>
           카카오로 로그인
         </KakaoButton>
+        <GoogleButton disabled={isSubmitting} onClick={googleLogin} />
         <SignUpLink to="/signup">회원가입으로 이동</SignUpLink>
       </Form2>
     </Container>

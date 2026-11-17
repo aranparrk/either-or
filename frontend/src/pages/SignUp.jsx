@@ -5,6 +5,8 @@ import AxiosApi from "../api/AxiosApi.jsx";
 import Button from "../components/common/Button.jsx";
 import Input from "../components/common/Input.jsx";
 import ProfileChoice from "../components/common/ProfileChoice.jsx";
+import GoogleButton from "../components/common/GoogleButton.jsx";
+import KakaoButton from "../components/common/KakaoButton.jsx";
 
 // 이메일 형식 검증
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -131,39 +133,6 @@ const SocialDivider = styled.div`
   }
 `;
 
-const KakaoButton = styled.button`
-  && {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    height: 48px;
-    margin-top: 0;
-    padding: 0 16px;
-    border: none;
-    border-radius: 8px;
-    background-color: #fee500;
-    color: #191919;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    &:hover {
-      background-color: #fada00;
-    }
-
-    &:active {
-      background-color: #f5d900;
-    }
-
-    &:focus-visible {
-      outline: 3px solid #191919;
-      outline-offset: 2px;
-    }
-  }
-`;
 
 const BackButton = styled.button`
   padding: 8px;
@@ -288,6 +257,10 @@ const SignUp = () => {
     window.location.href = "http://localhost:8080/oauth2/authorization/kakao";
   };
 
+  const googleSignUp = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+  };
+
   return (
     <Container>
       <Form1>
@@ -376,15 +349,11 @@ const SignUp = () => {
           <>
             <Caption1>원하는 방법으로 간편하게 시작하세요.</Caption1>
 
-            <KakaoButton type="button" onClick={kakaoSignUp}>
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M12 3C6.477 3 2 6.582 2 11c0 2.85 1.86 5.352 4.66 6.766L5.5 21l4.06-2.435c.79.15 1.607.235 2.44.235 5.523 0 10-3.582 10-8S17.523 3 12 3Z"
-                />
-              </svg>
+            <KakaoButton onClick={kakaoSignUp}>
               카카오로 가입하기
             </KakaoButton>
+
+            <GoogleButton onClick={googleSignUp} />
 
             <SocialDivider>또는</SocialDivider>
 
