@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import AxiosApi from "../api/AxiosApi.jsx";
 import Button from "../components/common/Button.jsx";
@@ -165,7 +165,36 @@ const KakaoButton = styled.button`
   }
 `;
 
+const BackButton = styled.button`
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    color: #252525;
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #76879b;
+    outline-offset: 2px;
+  }
+`;
+
+const LoginLink = styled(Link)`
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  text-underline-offset: 3px;
+`;
+
 const SignUp = () => {
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [inputEmail, setInputEmail] = useState("");
   const [inputPwd, setInputPwd] = useState("");
   const [inputProfileId, setInputProfileId] = useState(0);
@@ -237,7 +266,7 @@ const SignUp = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!isAllValid) return;
+    if (!showEmailForm || !isAllValid) return;
 
     const response = await AxiosApi.memberSignup(
       inputEmail,
@@ -284,69 +313,88 @@ const SignUp = () => {
       </Form1>
 
       <Form2 onSubmit={onSubmit}>
-        <Title>회원가입</Title>
+        <Title>{showEmailForm ? "이메일로 가입하기" : "회원가입"}</Title>
 
-        <Label>이메일</Label>
-        <Field>
-          <Input
-            type="email"
-            value={inputEmail}
-            placeholder="이메일을 입력해주세요"
-            onChange={(e) => setInputEmail(e.target.value.trim())}
-          />
-          <Message $valid={isEmailOk}>{getEmailMessage()}</Message>
-        </Field>
+        {showEmailForm ? (
+          <>
 
-        <Label>비밀번호</Label>
-        <Field>
-          <Input
-            type="password"
-            value={inputPwd}
-            placeholder="비밀번호를 입력해주세요"
-            onChange={(e) => setInputPwd(e.target.value)}
-          />
-          <Message $valid={isPwd}>
-            {inputPwd &&
-              (isPwd
-                ? "사용 가능한 비밀번호입니다."
-                : "영문, 숫자, 특수문자 포함 8~20자로 입력하세요.")}
-          </Message>
-        </Field>
+            <Label>이메일</Label>
+            <Field>
+              <Input
+                type="email"
+                value={inputEmail}
+                placeholder="이메일을 입력해주세요"
+                onChange={(e) => setInputEmail(e.target.value.trim())}
+              />
+              <Message $valid={isEmailOk}>{getEmailMessage()}</Message>
+            </Field>
 
-        <Label>비밀번호 확인</Label>
-        <Field>
-          <Input
-            type="password"
-            value={inputPwdConfirm}
-            placeholder="비밀번호를 한 번 더 입력해주세요"
-            onChange={(e) => setInputPwdConfirm(e.target.value)}
-          />
-          <Message $valid={isPwdConfirm}>
-            {inputPwdConfirm &&
-              (isPwdConfirm
-                ? "비밀번호가 일치합니다."
-                : "비밀번호가 일치하지 않습니다.")}
-          </Message>
-        </Field>
+            <Label>비밀번호</Label>
+            <Field>
+              <Input
+                type="password"
+                value={inputPwd}
+                placeholder="비밀번호를 입력해주세요"
+                onChange={(e) => setInputPwd(e.target.value)}
+              />
+              <Message $valid={isPwd}>
+                {inputPwd &&
+                  (isPwd
+                    ? "사용 가능한 비밀번호입니다."
+                    : "영문, 숫자, 특수문자 포함 8~20자로 입력하세요.")}
+              </Message>
+            </Field>
 
-        <Label>프로필</Label>
-        <ProfileChoice onSelect={selectProfile} selectedId={inputProfileId} />
+            <Label>비밀번호 확인</Label>
+            <Field>
+              <Input
+                type="password"
+                value={inputPwdConfirm}
+                placeholder="비밀번호를 한 번 더 입력해주세요"
+                onChange={(e) => setInputPwdConfirm(e.target.value)}
+              />
+              <Message $valid={isPwdConfirm}>
+                {inputPwdConfirm &&
+                  (isPwdConfirm
+                    ? "비밀번호가 일치합니다."
+                    : "비밀번호가 일치하지 않습니다.")}
+              </Message>
+            </Field>
 
-        <Button type="submit" enabled={isAllValid}>
-          가입하기
-        </Button>
+            <Label>프로필</Label>
+            <ProfileChoice onSelect={selectProfile} selectedId={inputProfileId} />
 
-        <SocialDivider>또는 간편 회원가입</SocialDivider>
+            <Button type="submit" enabled={isAllValid}>
+              가입하기
+            </Button>
 
-        <KakaoButton type="button" onClick={kakaoSignUp}>
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M12 3C6.477 3 2 6.582 2 11c0 2.85 1.86 5.352 4.66 6.766L5.5 21l4.06-2.435c.79.15 1.607.235 2.44.235 5.523 0 10-3.582 10-8S17.523 3 12 3Z"
-            />
-          </svg>
-          카카오로 가입하기
-        </KakaoButton>
+            <BackButton type="button" onClick={() => setShowEmailForm(false)}>
+              ← 가입 방식 다시 선택
+            </BackButton>
+          </>
+        ) : (
+          <>
+            <Caption1>원하는 방법으로 간편하게 시작하세요.</Caption1>
+
+            <KakaoButton type="button" onClick={kakaoSignUp}>
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12 3C6.477 3 2 6.582 2 11c0 2.85 1.86 5.352 4.66 6.766L5.5 21l4.06-2.435c.79.15 1.607.235 2.44.235 5.523 0 10-3.582 10-8S17.523 3 12 3Z"
+                />
+              </svg>
+              카카오로 가입하기
+            </KakaoButton>
+
+            <SocialDivider>또는</SocialDivider>
+
+            <Button type="button" enabled onClick={() => setShowEmailForm(true)}>
+              이메일로 가입하기
+            </Button>
+          </>
+        )}
+
+        <LoginLink to="/login">이미 계정이 있나요? 로그인</LoginLink>
       </Form2>
     </Container>
   );
