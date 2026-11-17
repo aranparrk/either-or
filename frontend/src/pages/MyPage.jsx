@@ -267,9 +267,6 @@ const MyPage = () => {
       </Menu>
 
       <Content>
-        {/* 회원정보 */}
-        {activeTab === "info" && <h3>회원정보 변경 화면입니다.</h3>}
-
         {activeTab === "info" && (
           <>
             <EditMember />

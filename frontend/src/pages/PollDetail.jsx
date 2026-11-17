@@ -21,22 +21,42 @@ const PageContainer = styled.div`
 
 const BackLink = styled(Link)`
   display: inline-block;
-  margin-bottom: 28px;
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 14px;
   color: #777;
   text-decoration: none;
 
   &:hover {
     color: #222;
+    background-color: #f5f6f7;
   }
+`;
+
+const PageFooter = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 24px;
+  border-top: 1px solid #eceef0;
 `;
 
 const PollHeader = styled.div`
   margin-bottom: 32px;
 `;
 
+const TitleRow = styled.div`
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-bottom: 12px;
+`;
+
 const PollTitle = styled.h2`
-  margin: 0 0 12px;
+  flex: 1 1 240px;
+  min-width: 0;
+  margin: 0;
   font-size: 28px;
   font-weight: 700;
   overflow-wrap: anywhere;
@@ -167,6 +187,47 @@ const ButtonRow = styled.div`
   justify-content: flex-end;
   margin-top: 12px;
   margin-bottom: 32px;
+`;
+
+const AuthorActions = styled.div`
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+`;
+
+const AuthorButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #666;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: ${({ $danger }) => ($danger ? "#fff5f5" : "#f5f6f7")};
+    border-color: ${({ $danger }) => ($danger ? "#f0caca" : "#cbd0d6")};
+    color: ${({ $danger }) => ($danger ? "#b93d3d" : "#242424")};
+  }
+
+  &:focus-visible {
+    outline: 2px solid #76879b;
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const ResultBar = styled.div`
@@ -342,7 +403,7 @@ const PollDetail = () => {
           }
         });
 
-        client.subscribe(`/topic/comments/${id}`, async (message) => {
+        client.subscribe(`/topic/comments/${id}`, async () => {
           try {
             const response = await AxiosApi.commentList(id);
             setComments(response.data);
@@ -455,24 +516,36 @@ const PollDetail = () => {
 
   return (
     <PageContainer>
-      <BackLink to="/">← 투표 목록</BackLink>
-
       <PollHeader>
-        <PollTitle>{poll.title}</PollTitle>
-        {currentMemberId() === String(poll.authorId) && (
-          <ButtonRow style={{ gap: "12px" }}>
-            <Button
-              enabled={!isDeleting}
-              size="short"
-              onClick={() => nav(`/votes/${id}/edit`)}
-            >
-              수정
-            </Button>
-            <Button enabled={!isDeleting} size="short" onClick={handleDelete}>
-              {isDeleting ? "삭제 중..." : "삭제"}
-            </Button>
-          </ButtonRow>
-        )}
+        <TitleRow>
+          <PollTitle>{poll.title}</PollTitle>
+          {currentMemberId() === String(poll.authorId) && (
+            <AuthorActions>
+              <AuthorButton
+                type="button"
+                disabled={isDeleting}
+                onClick={() => nav(`/votes/${id}/edit`)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m16 3 5 5-12 12-6 1 1-6L16 3Z" />
+                  <path d="m13 6 5 5" />
+                </svg>
+                수정
+              </AuthorButton>
+              <AuthorButton
+                type="button"
+                $danger
+                disabled={isDeleting}
+                onClick={handleDelete}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+                </svg>
+                {isDeleting ? "삭제 중..." : "삭제"}
+              </AuthorButton>
+            </AuthorActions>
+          )}
+        </TitleRow>
 
         <PollMeta>
           <StatusBadge $closed={isClosed}>
@@ -573,6 +646,8 @@ const PollDetail = () => {
         )}
       </VoteSection>
 
+
+
       <CommentSection>
         <SectionTitle>댓글</SectionTitle>
         {comments.length === 0 ? (
@@ -611,6 +686,9 @@ const PollDetail = () => {
           </Button>
         </ButtonRow>
       </CommentSection>
+      <PageFooter>
+        <BackLink to="/">← 투표 목록</BackLink>
+      </PageFooter>
     </PageContainer>
   );
 };
