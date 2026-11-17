@@ -69,6 +69,15 @@ const Header = () => {
   // 페이지 이동 시 변경된 로그인 정보를 반영
   const [isLogin, setIsLogin] = useState(false);
 
+  const [profileId, setProfileId] = useState(
+      localStorage.getItem("profileId")
+  );
+
+  const [imageUrl, setImageUrl] = useState(
+      localStorage.getItem("imageUrl") || ""
+  );
+
+
   useEffect(() => {
     // 로그인 상태 확인
     const checkLogin = () => {
@@ -77,6 +86,9 @@ const Header = () => {
         Boolean(localStorage.getItem("accessToken"));
 
       setIsLogin(login);
+
+      setProfileId(localStorage.getItem("profileId"));
+      setImageUrl(localStorage.getItem("imageUrl") || "");
     };
 
     // 이벤트 감지 시작
@@ -103,6 +115,7 @@ const Header = () => {
       localStorage.removeItem("isLogin");
       localStorage.removeItem("email");
       localStorage.removeItem("profileId");
+      localStorage.removeItem("imageUrl");
 
       // 로그아웃 상태 변경 알림
       window.dispatchEvent(new Event("authChanged"))
@@ -122,7 +135,10 @@ const Header = () => {
         <RightMenu>
           {isLogin ? (
             <>
-              <ProfileIcon />
+              <ProfileIcon
+                profileId={profileId}
+                imageUrl={imageUrl}
+              />
               <MenuLink to="/mypage">마이페이지</MenuLink>
               <span>|</span>
               <LogoutButton type="button" onClick={onLogout}>
