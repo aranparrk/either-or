@@ -1,10 +1,13 @@
+
 package com.eitheror.backend.config;
 
 import com.eitheror.backend.security.JwtFilter;
+import com.eitheror.backend.security.OAuth2LoginSuccessHandler;
 import com.eitheror.backend.security.TokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,8 +25,49 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // ==========================================
+    // OAuth2 인증 (카카오, 구글)
+    // ==========================================
     @Bean
     @Profile("dev")
+    @Order(1)
+    public SecurityFilterChain oauth2FilterChain(
+            HttpSecurity http,
+            OAuth2LoginSuccessHandler successHandler
+    ) throws Exception {
+
+        http
+                // OAuth2 인증 요청 및 콜백 경로만 처리
+                .securityMatcher(
+                        "/oauth2/**",
+                        "/login/oauth2/**",
+                        "/api/auth/social/**"
+                )
+
+                // OAuth2 인증 과정에서 필요할 때 세션 사용
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
+
+                // OAuth2 경로 접근 허용
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()
+                )
+
+                // OAuth2 로그인 활성화
+                .oauth2Login(oauth -> oauth
+                        .successHandler(successHandler)
+                );
+
+        return http.build();
+    }
+
+    // ==========================================
+    // 기존 JWT 인증
+    // ==========================================
+    @Bean
+    @Profile("dev")
+    @Order(2)
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             TokenProvider tokenProvider
@@ -44,15 +88,30 @@ public class SecurityConfig {
 
                 // 인증 없이 접근 가능한 주소
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.PUT, "/api/votes/*", "/api/votes/*/comments/*").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/votes/*", "/api/votes/*/comments/*").authenticated()
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/votes/*",
+                                "/api/votes/*/comments/*"
+                        ).authenticated()
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/votes/*",
+                                "/api/votes/*/comments/*"
+                        ).authenticated()
+
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/votes",
                                 "/api/votes/*/comments",
                                 "/api/votes/*/choices"
                         ).authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/member/update").authenticated()
+
+                        .requestMatchers(
+                                HttpMethod.PATCH, 
+                                "/member/update"
+                        ).authenticated()
+
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -63,6 +122,7 @@ public class SecurityConfig {
                                 "/ws",
                                 "/error"
                         ).permitAll()
+
                         .anyRequest().authenticated()
                 )
 
