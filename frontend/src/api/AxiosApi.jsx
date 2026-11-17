@@ -110,7 +110,7 @@ api.interceptors.response.use(
 
       return Promise.reject(refreshError);
     }
-  }
+  },
 );
 
 const AxiosApi = {
@@ -228,13 +228,23 @@ const AxiosApi = {
   // 마이페이지 API
   // ====================================
 
+  // 내가 작성한 투표 조회
+  myPollList: async () => {
+    return await api.get("/api/mypage/polls");
+  },
+
+  // 내가 작성한 댓글 조회
+  myCommentList: async () => {
+    return await api.get("/api/mypage/comments");
+  },
+
   // 회원 정보 수정
   memberUpdate: async (currentPwd, newPwd, imageUrl, profileId) => {
     return await api.patch("/api/member/update", {
       currentPwd,
       newPwd,
       imageUrl,
-      profileId
+      profileId,
     });
   },
 
@@ -243,7 +253,6 @@ const AxiosApi = {
   // 내가 쓴 댓글 조회
 
   // 회원탈퇴
-
 };
 
 export default AxiosApi;
