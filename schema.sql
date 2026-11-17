@@ -136,3 +136,9 @@ CREATE TABLE social_account (
     FOREIGN KEY (member_id)
         REFERENCES member(member_id)
 );
+
+select * from social_account
+
+SELECT member_id, email, pwd, profile_image_id, authority
+FROM member
+WHERE member_id = 72;

@@ -4,6 +4,7 @@ import styled from "styled-components";
 import Button from "../components/common/Button";
 import Input from "../components/common/Input";
 import AxiosApi from "../api/AxiosApi";
+import { saveLogin } from "../util/auth";
 
 const Container = styled.div`
   display: flex;
@@ -130,6 +131,43 @@ const SignUpLink = styled(Link)`
   }
 `;
 
+const KakaoButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9px;
+  background-color: #fee500;
+  color: #191919;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+
+  &:hover:not(:disabled) {
+    background-color: #fada00;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 3px solid #191919;
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 const Login = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPwd, setInputPwd] = useState("");
@@ -138,6 +176,10 @@ const Login = () => {
   const nav = useNavigate();
 
   const isValid = inputEmail.trim() !== "" && inputPwd !== "";
+
+  const kakaoLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/kakao";
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -158,15 +200,7 @@ const Login = () => {
         return;
       }
 
-      // JWT 및 회원 정보 저장
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("isLogin", "TRUE");
-      localStorage.setItem("email", data.email);
-      localStorage.setItem("profileId", String(data.profileId));
-
-      // 로그인 상태 변경 알림
-      window.dispatchEvent(new Event("authChanged"))
+      saveLogin(data);
 
       nav("/", { replace: true });
     } catch (error) {
@@ -237,7 +271,15 @@ const Login = () => {
         <Button type="submit" enabled={isValid && !isSubmitting}>
           {isSubmitting ? "로그인 중..." : "로그인"}
         </Button>
-
+        <KakaoButton type="button" disabled={isSubmitting} onClick={kakaoLogin}>
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12 3C6.477 3 2 6.582 2 11c0 2.85 1.86 5.352 4.66 6.766L5.5 21l4.06-2.435c.79.15 1.607.235 2.44.235 5.523 0 10-3.582 10-8S17.523 3 12 3Z"
+            />
+          </svg>
+          카카오로 로그인
+        </KakaoButton>
         <SignUpLink to="/signup">회원가입으로 이동</SignUpLink>
       </Form2>
     </Container>
