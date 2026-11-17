@@ -21,15 +21,14 @@ const ProfileStyled = styled.img`
   border: 1px solid #d0d0d0;
 `;
 
-const ProfileIcon = () => {
-    // 로그인한 맴버 프로필 아이디 가져오기
-    const profileId = Number(localStorage.getItem("profileId"));
-    // 프로필 아이디 번호를 기억하는 함수
-    const profileImageNumber = profileImages[profileId]
+// 로그인 상태 헤더에 회원 프로필 띄우기
+const ProfileIcon = ({ profileId, imageUrl }) => {
+    // 로그인한 회원 프로필 아이디 가져오기
+    const profileImage = imageUrl || profileImages[Number(profileId)] || profile1;
 
   return (
     <ProfileStyled
-    src={profileImageNumber}
+    src={profileImage}
     alt="내 프로필"
     />
   );
