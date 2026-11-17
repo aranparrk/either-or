@@ -11,7 +11,6 @@ import com.eitheror.backend.repository.MemberRepository;
 
 import com.eitheror.backend.repository.RefreshTokenRepository;
 import com.eitheror.backend.security.TokenProvider;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -91,20 +90,29 @@ public class AuthService {
                         "이메일 또는 비밀번호가 올바르지 않습니다."
                 ));
 
-        // 비밀번호 확인
-        if (!pwdEncoder.matches(dto.getPwd(), member.getPwd())) {
+        // 비밀번호 확인 (소셜 회원은 비밀번호가 없을 수 있음)
+        if (member.getPwd() == null ||
+                !pwdEncoder.matches(dto.getPwd(), member.getPwd())) {
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
                     "이메일 또는 비밀번호가 올바르지 않습니다."
             );
         }
 
-        // 인증에 성공한 회원의 회원번호와 일반 회원 권한으로 Access + Refresh 토큰 발급
+        return issueLoginTokens(member);
+
+    }
+
+    // 일반 로그인과 소셜 로그인이 공통으로 사용하는 JWT 발급
+    public LoginResponseDto issueLoginTokens(Member member) {
+
+        // Access Token + Refresh Token 발급
         TokenDto tokenDto = tokenProvider.createToken(
                 member.getMemberId(),
                 member.getAuthority()
         );
 
+        // Refresh Token DB 저장
         saveRefreshToken(member, tokenDto);
 
         // 회원 정보와 JWT 반환
@@ -118,6 +126,17 @@ public class AuthService {
                 tokenDto.refreshToken(),
                 tokenDto.refreshTokenExpiresIn()
         );
+    }
+
+    // 소셜 인증으로 확인한 기존 회원의 로그인 처리
+    public LoginResponseDto socialLogin(Long memberId) {
+        Member member = memberRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "회원이 존재하지 않습니다."
+                ));
+
+        return issueLoginTokens(member);
     }
 
     // 유효하지 않은 Refresh Token 예외 처리

@@ -50,6 +50,9 @@ dependencies {
 
 	// WebSocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+	// 제3자 로그인
+	implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client'
 }
 
 tasks.named('test') {
