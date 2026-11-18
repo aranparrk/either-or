@@ -255,6 +255,14 @@ const AxiosApi = {
       profileId,
     });
   },
+
+  // 기존 비밀번호 확인
+  checkCurrentPwd: async (currentPwd) => {
+    return await api.post("/api/member/check-pwd", {
+      currentPwd
+    });
+  },
+
 };
 
 export default AxiosApi;
