@@ -3,6 +3,9 @@ package com.eitheror.backend.repository;
 
 import com.eitheror.backend.entity.Vote;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -24,4 +27,19 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     // 특정 선택지의 득표 수
     long countByPoll_PollIdAndPollOption_OptionId(
             Long pollId, Long optionId);
+
+    // 회원 탈퇴시 회원이 참여한 모든 투표, 회원이 작성한 게시글에 참여된 모든 투표 삭제
+    @Modifying
+    @Query("""
+        DELETE FROM Vote v
+        WHERE v.member.memberId = :memberId
+            OR v.poll.pollId IN (
+                SELECT p.pollId
+                FROM Poll p
+                WHERE p.member.memberId = :memberId
+            )
+    """)
+    void deleteAllByMemberIdForWithdrawal(
+            @Param("memberId") Long memberId
+    );
 }

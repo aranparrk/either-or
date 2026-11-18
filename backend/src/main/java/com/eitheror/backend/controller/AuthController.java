@@ -5,13 +5,12 @@ import com.eitheror.backend.security.SecurityUtil;
 import com.eitheror.backend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "회원가입 API", description = "회원가입, 로그인, 로그아웃")
+@Tag(name = "회원가입 API", description = "회원가입, 로그인, 로그아웃, 회원탈퇴")
 @Slf4j
 @RestController
 @RequestMapping("/api/auth")
@@ -51,6 +50,13 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         authService.logout(SecurityUtil.currentMemberId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "회원탈퇴", description = "회원탈퇴를 합니다.")
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<Void> withdraw() {
+        authService.withdraw(SecurityUtil.currentMemberId());
         return ResponseEntity.noContent().build();
     }
 

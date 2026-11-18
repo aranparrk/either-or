@@ -7,9 +7,8 @@ import com.eitheror.backend.dto.SignUpRequestDto;
 import com.eitheror.backend.dto.TokenDto;
 import com.eitheror.backend.entity.Member;
 import com.eitheror.backend.entity.RefreshToken;
-import com.eitheror.backend.repository.MemberRepository;
+import com.eitheror.backend.repository.*;
 
-import com.eitheror.backend.repository.RefreshTokenRepository;
 import com.eitheror.backend.security.TokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +31,11 @@ public class AuthService {
     private final PasswordEncoder pwdEncoder;
     private final TokenProvider tokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final SocialAccountRepository socialAccountRepository;
+    private final VoteRepository voteRepository;
+    private final CommentRepository commentRepository;
+    private final PollOptionRepository pollOptionRepository;
+    private final PollRepository pollRepository;
 
     // 이메일 중복 확인
     public boolean memberExist(String email) {
@@ -223,6 +227,36 @@ public class AuthService {
                 .ifPresent(refreshTokenRepository::deleteByMember);
     }
 
+    // 회원탈퇴
+    public void withdraw(Long memberId) {
+
+        // 회원 정보 조회
+        Member member = memberRepository.findByMemberId(memberId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("회원을 찾을 수 없습니다.")
+                );
+
+        // 1.RefreshToken 삭제
+        refreshTokenRepository.deleteByMember(member);
+
+        // 2.카카오 등 소셜 계정 연결 정보 삭제
+        socialAccountRepository.deleteByMember(member);
+
+        // 3.회원이 참여한 모든 투표, 회원 게시글에 참여된 모든 투표 정보 삭제
+        voteRepository.deleteAllByMemberIdForWithdrawal(memberId);
+
+        // 4.회원이 작성한 모든 댓글, 회원 게시글에 달린 모든 댓글 정보 삭제
+        commentRepository.deleteAllByMemberIdForWithdrawal(memberId);
+
+        // 5.회원이 작성한 게시글의 모든 선택지 정보 삭제
+        pollOptionRepository.deleteAllByMemberIdForWithdrawal(memberId);
+
+        // 6.회원이 작성한 모든 게시글 삭제
+        pollRepository.deleteAllByMemberIdForWithdrawal(memberId);
+
+        // 7.회원 정보 삭제
+        memberRepository.delete(member);
+    }
 
     // DTO → Entity
     private Member toEntity(SignUpRequestDto dto, String email) {

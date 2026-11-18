@@ -58,18 +58,5 @@ public class MemberService {
         }
 
         return true;
-
     }
-
-    // 내가 쓴 투표 조회
-
-
-    // 내가 쓴 댓글 조회
-
-
-    // 회원탈퇴
-
-
-    // DTO → Entity
-
 }
