@@ -17,7 +17,8 @@ class PollServiceTests {
     PollOptionRepository options = mock(PollOptionRepository.class);
     VoteRepository votes = mock(VoteRepository.class);
     CommentRepository comments = mock(CommentRepository.class);
-    PollService service = new PollService(polls, options, mock(MemberRepository.class), votes, comments);
+    MemberRepository members = mock(MemberRepository.class);
+    PollService service = new PollService(polls, options, members, votes, comments);
     Poll poll;
     PollOption a, b;
 
@@ -106,6 +107,18 @@ class PollServiceTests {
         var dto = request("A"); dto.setOptions(List.of("A"));
         assertEquals(400, assertThrows(ResponseStatusException.class,
                 () -> service.updatePoll(10L, dto)).getStatusCode().value());
+    }
+    @Test void pollContentIsOptionalOnCreateAndUpdate() {
+        when(members.findById(1L)).thenReturn(Optional.of(poll.getMember()));
+        when(polls.save(any(Poll.class))).thenAnswer(call -> call.getArgument(0));
+        when(options.save(any(PollOption.class))).thenAnswer(call -> call.getArgument(0));
+        var create = request("A");
+        create.setContent(null);
+        assertEquals("", service.createPoll(create).getContent());
+
+        var update = request("A");
+        update.setContent("   ");
+        assertEquals("", service.updatePoll(10L, update).getContent());
     }
     @Test void deletionRemovesDependentsBeforePoll() {
         service.deletePoll(10L);

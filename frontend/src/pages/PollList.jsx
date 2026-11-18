@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import AxiosApi from "../api/AxiosApi";
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
-import Button from "../components/common/Button";
+import { Link } from "react-router-dom";
+import TravelCover from "../components/common/TravelCover.jsx";
 import PollItem from "../components/poll/PollItem";
 
 // 페이지 전체 영역
@@ -19,31 +19,20 @@ const PageContainer = styled.div`
   }
 `;
 
-// 페이지 상단
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 32px;
-
-  @media (max-width: 600px) {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-`;
-
-const PageTitle = styled.h2`
-  margin: 0 0 8px;
-  font-size: 28px;
-  font-weight: 700;
-  color: #222;
-`;
-
-const PageDescription = styled.p`
-  margin: 0;
+const CreatePollLink = styled(Link)`
+  align-self: flex-start;
+  margin-top: 20px;
+  padding: 11px 17px;
+  border-radius: 9px;
+  background: #f4ebd6;
+  color: #173c35;
+  text-decoration: none;
   font-size: 14px;
-  color: #888;
+  font-weight: 700;
+
+  &:hover {
+    background: #fff8e7;
+  }
 `;
 
 // 투표 카드 목록
@@ -63,7 +52,7 @@ const FilterBar = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
+  margin: 24px 0;
   flex-wrap: wrap;
 `;
 
@@ -76,9 +65,9 @@ const FilterGroup = styled.div`
 // 필터 버튼
 const FilterButton = styled.button`
   padding: 10px 16px;
-  border: 1px solid ${({ $active }) => ($active ? "#36393b" : "#e8e8e8")};
+  border: 1px solid ${({ $active }) => ($active ? "#205c50" : "#e0e9e4")};
   border-radius: 8px;
-  background-color: ${({ $active }) => ($active ? "#36393b" : "#fff")};
+  background-color: ${({ $active }) => ($active ? "#205c50" : "#fff")};
   color: ${({ $active }) => ($active ? "#fff" : "#777")};
   font-size: 13px;
   cursor: pointer;
@@ -99,7 +88,6 @@ const PollList = () => {
   const [polls, setPolls] = useState([]);
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("latest");
-  const nav = useNavigate();
 
   useEffect(() => {
     AxiosApi.pollList()
@@ -135,16 +123,13 @@ const PollList = () => {
 
   return (
     <PageContainer>
-      <PageHeader>
-        <div>
-          <PageTitle>투표 목록</PageTitle>
-          <PageDescription>당신의 선택을 기다리는 다양한 투표</PageDescription>
-        </div>
-
-        <Button size="short" enabled={true} onClick={() => nav("/votes/new")}>
-          투표 등록
-        </Button>
-      </PageHeader>
+      <TravelCover
+        wide
+        title="다음 여행지는 어디로 갈까요?"
+        description="두 여행지를 비교하고, 가고 싶은 곳에 한 표를 남겨보세요."
+      >
+        <CreatePollLink to="/votes/new">여행지 투표 만들기</CreatePollLink>
+      </TravelCover>
 
       <FilterBar>
         <FilterGroup>

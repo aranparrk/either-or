@@ -2,6 +2,7 @@ import { useState } from "react";
 import AxiosApi from "../../api/AxiosApi.jsx";
 import styled from "styled-components";
 import Button from "../common/Button.jsx";
+import FormFeedback from "../common/FormFeedback.jsx";
 import ChangeProfile from "./ChangeProfile.jsx";
 import ChangePwd from "./ChangePwd.jsx";
 
@@ -21,6 +22,9 @@ const EditMember = () => {
     () => Number(localStorage.getItem("profileId") || 1)
     );
     const [profileChanged, setProfileChanged] = useState(false);
+    const [saveError, setSaveError] = useState("");
+    const [saved, setSaved] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [imageUrl, setImageUrl] = useState(
         () => localStorage.getItem("imageUrl") || ""
     );
@@ -41,18 +45,21 @@ const EditMember = () => {
 
     // 회원 정보 변경
     const handleMemberUpdate = async () => {
+        if (isSaving) return;
+        setSaveError("");
+        setSaved(false);
 
         // 비밀번호를 변경 여부 확인
         const pwdChange = currentPwd || newPwd || confirmPwd;
 
         if (pwdChange) {
             if (!currentPwd || !newPwd || !confirmPwd) {
-                alert("비밀번호 입력칸을 모두 작성해 주세요.");
+                setSaveError("비밀번호 입력칸을 모두 작성해 주세요.");
                 return;
             }
 
             if (newPwd !== confirmPwd) {
-                alert("새 비밀번호가 일치하지 않습니다.");
+                setSaveError("새 비밀번호가 일치하지 않습니다.");
                 return;
             }
         }
@@ -61,13 +68,11 @@ const EditMember = () => {
         const profileChange = profileChanged;
 
         // 변경할 정보가 있는지 확인
-        if (!pwdChange && !profileChange) {
-            alert("변경할 정보가 없습니다.");
-            return;
-        }
+        if (!pwdChange && !profileChange) return;
 
         // 회원 정보 변경 요청
         try {
+            setIsSaving(true);
             const response = await AxiosApi.memberUpdate(
 
                 // 비밀번호만 변경하거나 프로필만 변경 가능
@@ -80,7 +85,7 @@ const EditMember = () => {
             if (response.data === true) {
 
                 // 비밀번호 변경 후 입력칸 초기화
-                alert("회원 정보가 변경되었습니다.");
+                setSaved(true);
                 setCurrentPwd("");
                 setNewPwd("");
                 setConfirmPwd("");
@@ -98,18 +103,15 @@ const EditMember = () => {
                     // 헤더 프로필에 변경 이벤트 알리기
                     window.dispatchEvent(new Event("authChanged"))
                 }
+            } else {
+                setSaveError("회원 정보 변경에 실패했습니다.");
             }
 
         } catch (error) {
-            console.error("회원 정보 변경 오류:", error);
-
             const message = error.response?.data?.message;
-
-            if (message?.includes("기존 비밀번호")) {
-                alert("기존 비밀번호가 일치하지 않습니다.");
-            } else {
-                alert(message || "회원 정보 변경에 실패했습니다.");
-            }
+            setSaveError(typeof message === "string" && message ? message : "회원 정보 변경에 실패했습니다.");
+        } finally {
+            setIsSaving(false);
         }
     }
 
@@ -129,11 +131,13 @@ const EditMember = () => {
                 confirmPwd={confirmPwd}
                 setConfirmPwd={setConfirmPwd}
             />
+            <FormFeedback>{saveError}</FormFeedback>
+            {saved && <FormFeedback error={false}>회원 정보를 저장했습니다.</FormFeedback>}
             <Button
-                enabled={true}
+                enabled={!isSaving && Boolean(profileChanged || currentPwd || newPwd || confirmPwd)}
                 onClick={handleMemberUpdate}
             >
-                변경하기
+                {isSaving ? "저장 중…" : "변경하기"}
             </Button>
         </Form>
     )

@@ -3,6 +3,7 @@ import styled from "styled-components";
 import AxiosApi from "../../api/AxiosApi";
 import Button from "../common/Button";
 import Input from "../common/Input";
+import FormFeedback from "../common/FormFeedback.jsx";
 
 const Option = styled.fieldset`
   display: grid;
@@ -10,14 +11,18 @@ const Option = styled.fieldset`
   gap: 10px;
   min-width: 0;
   margin: 0;
-  padding: 12px;
-  border: 1px solid #e9e9e9;
-  border-radius: 10px;
+  padding: 0;
+  border: 0;
 
   legend {
-    padding: 0 4px;
+    padding: 0;
+    margin-bottom: 8px;
     font-size: 14px;
     font-weight: 600;
+  }
+
+  > p {
+    margin: 0;
   }
 `;
 
@@ -28,6 +33,12 @@ const SearchForm = styled.form`
 
   input {
     min-width: 0;
+  }
+
+  button {
+    width: auto;
+    flex: 0 0 64px;
+    height: 50px;
   }
 `;
 
@@ -104,15 +115,14 @@ function SpotPreview({ spot }) {
   );
 }
 
-export default function TourOptionField({ label, value, onChange, selected, onSelect, disabled }) {
-  const [keyword, setKeyword] = useState("");
+export default function TourOptionField({ id, label, value, onChange, selected, onSelect, disabled, error }) {
   const [results, setResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [message, setMessage] = useState("");
 
   async function search(event) {
     event.preventDefault();
-    const query = keyword.trim();
+    const query = value.trim();
     if (!query || isSearching || disabled) return;
 
     setIsSearching(true);
@@ -134,34 +144,27 @@ export default function TourOptionField({ label, value, onChange, selected, onSe
   return (
     <Option disabled={disabled}>
       <legend>{label}</legend>
-      <label>
-        선택지 이름
+      <SearchForm onSubmit={search}>
         <Input
+          id={id}
+          aria-label={`${label} 이름 또는 검색어`}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
           value={value}
-          placeholder="이름을 직접 입력하거나 관광지 선택"
+          placeholder="이름 입력 또는 관광지 검색"
+          disabled={isSearching}
           onChange={(event) => {
             onSelect(null);
             onChange(event.target.value);
-          }}
-        />
-      </label>
-      <label htmlFor={`${label}-tour-keyword`}>관광지 검색</label>
-      <SearchForm onSubmit={search}>
-        <Input
-          id={`${label}-tour-keyword`}
-          value={keyword}
-          placeholder="관광지 이름"
-          disabled={isSearching}
-          onChange={(event) => {
-            setKeyword(event.target.value);
             setResults([]);
             setMessage("");
           }}
         />
-        <Button type="submit" size="small" enabled={Boolean(keyword.trim()) && !isSearching}>
+        <Button type="submit" size="small" enabled={Boolean(value.trim()) && !isSearching}>
           검색
         </Button>
       </SearchForm>
+      <FormFeedback id={`${id}-error`}>{error}</FormFeedback>
       <Status role="status">{isSearching ? "검색 중…" : message}</Status>
       {results.length > 0 && (
         <Results aria-label={`${label} 관광지 검색 결과`}>

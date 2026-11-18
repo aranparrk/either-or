@@ -115,7 +115,7 @@ public class PollService {
         Poll poll = new Poll();
         poll.setMember(member.get());
         poll.setTitle(pollCreateReqDto.getTitle());
-        poll.setContent(pollCreateReqDto.getContent());
+        poll.setContent(normalizeContent(pollCreateReqDto.getContent()));
         poll.setDeadline(pollCreateReqDto.getDeadline());
         poll.setContentImage(pollCreateReqDto.getContentImage());
 
@@ -214,15 +214,12 @@ public class PollService {
             );
         }
 
-        // 제목 또는 내용 빈문자열 검사
         if (pollCreateReqDto.getTitle() == null
-                || pollCreateReqDto.getTitle().isBlank()
-                || pollCreateReqDto.getContent() == null
-                || pollCreateReqDto.getContent().isBlank()) {
+                || pollCreateReqDto.getTitle().isBlank()) {
 
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "제목 또는 내용을 입력해주세요."
+                    "제목을 입력해주세요."
             );
         }
 
@@ -309,7 +306,7 @@ public class PollService {
         }
 
         poll.setTitle(dto.getTitle());
-        poll.setContent(dto.getContent());
+        poll.setContent(normalizeContent(dto.getContent()));
         poll.setContentImage(dto.getContentImage());
         poll.setDeadline(dto.getDeadline());
 
@@ -388,6 +385,10 @@ public class PollService {
         pollDetailResDto.setDeadline(poll.getDeadline());
 
         return pollDetailResDto;
+    }
+
+    private static String normalizeContent(String content) {
+        return content == null || content.isBlank() ? "" : content;
     }
 
     private static PollOptionResDto toOptionDto(PollOption option) {

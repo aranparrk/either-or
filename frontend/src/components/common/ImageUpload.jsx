@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import styled from "styled-components";
 import Button from "./Button.jsx";
+import FormFeedback from "./FormFeedback.jsx";
 import CancelButton from "./CancelButton.jsx"
 import { uploadImage } from "../../api/imgBB.jsx";
 
@@ -28,6 +29,8 @@ const ImageUpload = ({ onImageSelect }) => {
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [uploadError, setUploadError] = useState("");
+  const [uploaded, setUploaded] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -42,6 +45,8 @@ const ImageUpload = ({ onImageSelect }) => {
     const file = e.target.files[0];
 
     if (file) {
+      setUploadError("");
+      setUploaded(false);
       // 선택한 이미지 미리보기 주소
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
@@ -57,23 +62,21 @@ const ImageUpload = ({ onImageSelect }) => {
   const handleImageUpload = async () => {
 
     // 이미지 유무 확인
-    if (!imageFile) {
-      alert("등록할 이미지를 먼저 선택해 주세요.");
-      return;
-    }
+    if (!imageFile || uploading || uploaded) return;
 
     try { // 이미지 등록이 성공할때
       setUploading(true);
+      setUploadError("");
       // ImgBB에 이미지 업로드
       const UploadedImageUrl = await uploadImage(imageFile)
       // 업로드된 이미지 주소를 부모 컴포넌트에 전달
       onImageSelect?.(UploadedImageUrl)
 
-      alert("이미지 등록이 완료되었습니다.")
+      setUploaded(true);
 
     } catch (error) { // 이미지 등록 중 오류가 발생할때
       console.error("이미지 등록 실패", error);
-      alert("이미지 등록이 실패했습니다.")
+      setUploadError("이미지 업로드에 실패했습니다. 다시 시도해주세요.");
 
     } finally { // 업로드 성공 여부와 관계없이 실행하여 등록버튼을 활성화
       setUploading(false)
@@ -84,6 +87,8 @@ const ImageUpload = ({ onImageSelect }) => {
   const handleRemoveImage = () => {
     setPreviewUrl("");
     setImageFile(null);
+    setUploaded(false);
+    setUploadError("");
     onImageSelect?.(null);
 
     // 파일 선택창 초기화
@@ -97,6 +102,7 @@ const ImageUpload = ({ onImageSelect }) => {
         type="file"
         accept="image/*"
         onChange={handleImageChange}
+        disabled={uploading}
       />
       {previewUrl && (
         <>
@@ -113,15 +119,16 @@ const ImageUpload = ({ onImageSelect }) => {
               취소
             </CancelButton>
             <Button
-              enabled={!!imageFile && !uploading}
+              enabled={!!imageFile && !uploading && !uploaded}
               onClick={handleImageUpload}
               size="small"
             >
-              {uploading ? "등록중..." : "사진등록"}
+              {uploading ? "등록 중…" : uploaded ? "첨부됨" : "사진 등록"}
             </Button>
           </Form>
         </>
       )}
+      <FormFeedback>{uploadError}</FormFeedback>
     </Container>
   );
 }
