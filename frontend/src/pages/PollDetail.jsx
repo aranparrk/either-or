@@ -309,7 +309,7 @@ const ResultOptionButton = styled(ResultCard).attrs({
   }
 `;
 
-const ResultOptionName = styled.span`
+const OptionName = styled.span`
   display: block;
   width: 100%;
   margin: 0;
@@ -355,17 +355,14 @@ const PollImage = styled.img`
   margin: 28px auto 0;
 `;
 
-function PollOptionImage({ option }) {
-  if (!option.imageUrl) return null;
+function PollOptionImage({ option, onError }) {
   return (
     <OptionImage
       src={option.imageUrl}
       alt=""
       loading="lazy"
       referrerPolicy="no-referrer"
-      onError={(event) => {
-        event.currentTarget.hidden = true;
-      }}
+      onError={() => onError(option.imageUrl)}
     />
   );
 }
@@ -405,6 +402,7 @@ const PollDetail = () => {
   };
 
   const [poll, setPoll] = useState(null);
+  const [failedPhoto, setFailedPhoto] = useState(null);
   const [pendingOptionId, setPendingOptionId] = useState(null);
   const voteInFlight = useRef(false);
   const [result, setResult] = useState(null);
@@ -528,7 +526,10 @@ const PollDetail = () => {
   }
 
   const isClosed = new Date(poll.deadline) <= new Date();
-  const optionResults = (poll.options ?? []).map((option) => {
+  const options = poll.options ?? [];
+  const showOptionPhotos = options.length === 2
+    && options.every((option) => option.imageUrl?.trim() && option.imageUrl !== failedPhoto);
+  const optionResults = options.map((option) => {
     const tally = result?.options.find(
       (item) => item.optionId === option.optionId
     );
@@ -708,12 +709,12 @@ const PollDetail = () => {
                 {optionResults.map(({ option }, index) => {
                   const card = (
                     <>
-                      <PollOptionImage option={option} />
-                      <ResultOptionName>
+                      {showOptionPhotos && <PollOptionImage option={option} onError={setFailedPhoto} />}
+                      <OptionName>
                         <ResultDot $second={index === 1} aria-hidden="true" />
                         {option.content}
                         {option.optionId === winningOptionId && <WinnerBadge>최다 득표</WinnerBadge>}
-                      </ResultOptionName>
+                      </OptionName>
                     </>
                   );
                   return isClosed ? (
@@ -770,7 +771,7 @@ const PollDetail = () => {
         ) : (
           <>
             <OptionGrid>
-              {(poll.options ?? []).map((option) => (
+              {options.map((option) => (
                 <OptionButton
                   key={option.optionId}
                   type="button"
@@ -778,8 +779,8 @@ const PollDetail = () => {
                   disabled={pendingOptionId !== null}
                   onClick={() => handleVote(option.optionId)}
                 >
-                  <PollOptionImage option={option} />
-                  <span>{option.content}</span>
+                  {showOptionPhotos && <PollOptionImage option={option} onError={setFailedPhoto} />}
+                  <OptionName>{option.content}</OptionName>
                 </OptionButton>
               ))}
             </OptionGrid>
