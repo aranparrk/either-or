@@ -17,6 +17,22 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder pwdEncoder;
 
+    // 기존 비밀번호 확인
+    public boolean checkCurrentPwd(String currentPwd) {
+
+        // 로그인한 회원번호 가져오기
+        Long memberId = SecurityUtil.currentMemberId();
+
+        // 회원 조회
+        Member member = memberRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "해당 회원이 존재하지 않습니다."
+                ));
+
+        // 기존 비밀번호 일치 여부 확인
+        return pwdEncoder.matches(currentPwd, member.getPwd());
+    }
+
     // 회원 정보 수정
     public boolean memberUpdate(MemberUpdateReqDto dto) {
 
