@@ -41,7 +41,7 @@ const Footer = () => {
   return (
     <FooterContainer>
       <FooterInner>
-        <FooterText>양자택일 · 두 가지 선택, 다양한 생각</FooterText>
+        <FooterText>양자택일 · 여행지 투표</FooterText>
         <FooterText>{pageTitle}</FooterText>
       </FooterInner>
     </FooterContainer>

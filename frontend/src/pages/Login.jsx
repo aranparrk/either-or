@@ -1,53 +1,21 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import TravelAuthLayout, { AuthDivider } from "../components/common/TravelAuthLayout.jsx";
 import Button from "../components/common/Button";
+import FormFeedback from "../components/common/FormFeedback.jsx";
 import Input from "../components/common/Input";
 import AxiosApi from "../api/AxiosApi";
 import { saveLogin } from "../util/auth";
 import GoogleButton from "../components/common/GoogleButton.jsx";
 import KakaoButton from "../components/common/KakaoButton.jsx";
 
-const Container = styled.div`
-  display: flex;
-  width: 100%;
-  flex: 1;
-  box-sizing: border-box;
-  justify-content: center;
-  align-items: center;
-  gap: 56px;
-  padding: 48px 24px;
-
-  @media (max-width: 820px) {
-    flex-direction: column;
-    gap: 32px;
-  }
-`;
-
-const Form1 = styled.div`
-  width: 100%;
-  max-width: 360px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-
-  > p {
-    margin-bottom: 20px;
-  }
-`;
-
 const Form2 = styled.form`
   width: 100%;
-  max-width: 400px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding: 36px;
   gap: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  background-color: white;
 
   > label:not(:first-of-type) {
     margin-top: 12px;
@@ -64,13 +32,6 @@ const Form2 = styled.form`
   }
 `;
 
-const ABbox = styled.div`
-  display: flex;
-  width: 100%;
-  gap: 12px;
-  margin-top: 4px;
-`;
-
 const Title = styled.h1`
   margin: 0 0 24px;
   font-size: 30px;
@@ -83,40 +44,6 @@ const Label = styled.label`
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-`;
-
-const Caption1 = styled.p`
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #666;
-`;
-
-const Caption2 = styled.div`
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-width: 0;
-  height: 120px;
-  box-sizing: border-box;
-  padding: 16px;
-  background-color: rgb(234, 234, 234);
-  border-radius: 10px;
-  text-align: center;
-
-  h1 {
-    margin: 0 0 10px;
-    font-size: 30px;
-    color: #666;
-  }
-
-  p {
-    margin: 0;
-    font-size: 12px;
-    color: #666;
-  }
 `;
 
 const SignUpLink = styled(Link)`
@@ -138,6 +65,7 @@ const Login = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPwd, setInputPwd] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const nav = useNavigate();
 
@@ -159,6 +87,7 @@ const Login = () => {
     }
 
     setIsSubmitting(true);
+    setLoginError("");
 
     try {
       const response = await AxiosApi.memberLogin(inputEmail.trim(), inputPwd);
@@ -166,7 +95,7 @@ const Login = () => {
       const data = response.data;
 
       if (!data?.accessToken) {
-        alert("로그인 응답에 토큰이 없습니다.");
+        setLoginError("로그인하지 못했습니다. 잠시 후 다시 시도해주세요.");
         return;
       }
 
@@ -174,12 +103,10 @@ const Login = () => {
 
       nav("/", { replace: true });
     } catch (error) {
-      console.error("로그인 오류", error);
-
       if (error.response?.status === 401) {
-        alert("이메일 또는 비밀번호가 올바르지 않습니다.");
+        setLoginError("이메일 또는 비밀번호가 올바르지 않습니다.");
       } else {
-        alert("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        setLoginError("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       }
     } finally {
       setIsSubmitting(false);
@@ -187,34 +114,7 @@ const Login = () => {
   };
 
   return (
-    <Container>
-      <Form1>
-        <Caption1>찬반 토론의 시작!</Caption1>
-
-        <Title>
-          당신의 생각은
-          <br />
-          어느 쪽인가요?
-        </Title>
-
-        <Caption1>
-          두 가지 선택 사이, 나의 의견을 남겨보세요.
-          <br />
-          투표에 참여하고 대중의 선택을 볼 수 있습니다.
-        </Caption1>
-
-        <ABbox>
-          <Caption2>
-            <h1>A</h1>
-            <p>당신의 선택</p>
-          </Caption2>
-          <Caption2>
-            <h1>B</h1>
-            <p>당신의 선택</p>
-          </Caption2>
-        </ABbox>
-      </Form1>
-
+    <TravelAuthLayout>
       <Form2 onSubmit={onSubmit}>
         <Title>로그인</Title>
 
@@ -238,16 +138,18 @@ const Login = () => {
           onChange={(e) => setInputPwd(e.target.value)}
         />
 
+        <FormFeedback>{loginError}</FormFeedback>
         <Button type="submit" enabled={isValid && !isSubmitting}>
           {isSubmitting ? "로그인 중..." : "로그인"}
         </Button>
+        <AuthDivider />
         <KakaoButton disabled={isSubmitting} onClick={kakaoLogin}>
           카카오로 로그인
         </KakaoButton>
         <GoogleButton disabled={isSubmitting} onClick={googleLogin} />
         <SignUpLink to="/signup">회원가입으로 이동</SignUpLink>
       </Form2>
-    </Container>
+    </TravelAuthLayout>
   );
 };
 

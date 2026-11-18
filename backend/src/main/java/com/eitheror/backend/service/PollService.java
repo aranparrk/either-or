@@ -18,9 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -113,7 +115,7 @@ public class PollService {
         Poll poll = new Poll();
         poll.setMember(member.get());
         poll.setTitle(pollCreateReqDto.getTitle());
-        poll.setContent(pollCreateReqDto.getContent());
+        poll.setContent(normalizeContent(pollCreateReqDto.getContent()));
         poll.setDeadline(pollCreateReqDto.getDeadline());
         poll.setContentImage(pollCreateReqDto.getContentImage());
 
@@ -124,20 +126,17 @@ public class PollService {
         List<PollOptionResDto> optionDtos = new ArrayList<>();
 
         // 선택지 2개 저장
-        for (String content : pollCreateReqDto.getOptions()) {
+        for (int i = 0; i < pollCreateReqDto.getOptions().size(); i++) {
 
             PollOption option = new PollOption();
             option.setPoll(savedPoll);
-            option.setContent(content);
+            option.setContent(pollCreateReqDto.getOptions().get(i));
+            if (pollCreateReqDto.getTourOptions() != null) {
+                setTourOption(option, pollCreateReqDto.getTourOptions().get(i));
+            }
 
             PollOption savedOption = pollOptionRepository.save(option);
-
-            // 선택지 Entity → DTO 변환
-            PollOptionResDto optionDto = new PollOptionResDto();
-            optionDto.setOptionId(savedOption.getOptionId());
-            optionDto.setContent(savedOption.getContent());
-
-            optionDtos.add(optionDto);
+            optionDtos.add(toOptionDto(savedOption));
         }
 
         // 응답 DTO 생성
@@ -185,6 +184,18 @@ public class PollService {
             }
         }
 
+        if (pollCreateReqDto.getTourOptions() != null) {
+            if (pollCreateReqDto.getTourOptions().size() != pollCreateReqDto.getOptions().size()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "관광지 정보는 선택지와 순서 및 개수가 같아야 합니다.");
+            }
+            for (PollCreateReqDto.TourOption tour : pollCreateReqDto.getTourOptions()) {
+                if (tour != null && (tour.contentId() == null || !tour.contentId().matches("[0-9]{1,32}")
+                        || !isValidTourImageUrl(tour.imageUrl()))) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "관광지 ID 또는 이미지 주소가 올바르지 않습니다.");
+                }
+            }
+        }
+
         // 마감일시 필수 입력 검사
         if (pollCreateReqDto.getDeadline() == null) {
             throw new ResponseStatusException(
@@ -203,15 +214,12 @@ public class PollService {
             );
         }
 
-        // 제목 또는 내용 빈문자열 검사
         if (pollCreateReqDto.getTitle() == null
-                || pollCreateReqDto.getTitle().isBlank()
-                || pollCreateReqDto.getContent() == null
-                || pollCreateReqDto.getContent().isBlank()) {
+                || pollCreateReqDto.getTitle().isBlank()) {
 
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "제목 또는 내용을 입력해주세요."
+                    "제목을 입력해주세요."
             );
         }
 
@@ -276,9 +284,19 @@ public class PollService {
             );
         }
 
-        boolean changed =
-                !options.get(0).getContent().equals(dto.getOptions().get(0))
-                        || !options.get(1).getContent().equals(dto.getOptions().get(1));
+        boolean changed = false;
+        List<PollCreateReqDto.TourOption> tourOptions = new ArrayList<>(options.size());
+        for (int i = 0; i < options.size(); i++) {
+            PollOption option = options.get(i);
+            String content = dto.getOptions().get(i);
+            PollCreateReqDto.TourOption tour = dto.getTourOptions() == null
+                    ? existingTourOption(option, content)
+                    : dto.getTourOptions().get(i);
+            changed |= !option.getContent().equals(content)
+                    || !Objects.equals(option.getTourContentId(), tour == null ? null : tour.contentId())
+                    || !Objects.equals(option.getTourImageUrl(), tourImageUrl(tour));
+            tourOptions.add(tour);
+        }
 
         if (changed && voteRepository.countByPoll_PollId(pollId) > 0) {
             throw new ResponseStatusException(
@@ -288,12 +306,14 @@ public class PollService {
         }
 
         poll.setTitle(dto.getTitle());
-        poll.setContent(dto.getContent());
+        poll.setContent(normalizeContent(dto.getContent()));
         poll.setContentImage(dto.getContentImage());
         poll.setDeadline(dto.getDeadline());
 
         for (int i = 0; i < options.size(); i++) {
-            options.get(i).setContent(dto.getOptions().get(i));
+            PollOption option = options.get(i);
+            option.setContent(dto.getOptions().get(i));
+            setTourOption(option, tourOptions.get(i));
         }
 
         return toDetailDto(poll);
@@ -357,11 +377,7 @@ public class PollService {
 
         for (PollOption option : options) {
 
-            PollOptionResDto optionDto = new PollOptionResDto();
-            optionDto.setOptionId(option.getOptionId());
-            optionDto.setContent(option.getContent());
-
-            optionDtos.add(optionDto);
+            optionDtos.add(toOptionDto(option));
         }
 
         pollDetailResDto.setOptions(optionDtos);
@@ -369,5 +385,46 @@ public class PollService {
         pollDetailResDto.setDeadline(poll.getDeadline());
 
         return pollDetailResDto;
+    }
+
+    private static String normalizeContent(String content) {
+        return content == null || content.isBlank() ? "" : content;
+    }
+
+    private static PollOptionResDto toOptionDto(PollOption option) {
+        PollOptionResDto dto = new PollOptionResDto();
+        dto.setOptionId(option.getOptionId());
+        dto.setContent(option.getContent());
+        dto.setContentId(option.getTourContentId());
+        dto.setImageUrl(option.getTourImageUrl());
+        return dto;
+    }
+
+    private static PollCreateReqDto.TourOption existingTourOption(PollOption option, String content) {
+        if (!option.getContent().equals(content) || option.getTourContentId() == null) {
+            return null;
+        }
+        return new PollCreateReqDto.TourOption(option.getTourContentId(), option.getTourImageUrl());
+    }
+
+    private static void setTourOption(PollOption option, PollCreateReqDto.TourOption tour) {
+        option.setTourContentId(tour == null ? null : tour.contentId());
+        option.setTourImageUrl(tourImageUrl(tour));
+    }
+
+    private static String tourImageUrl(PollCreateReqDto.TourOption tour) {
+        return tour == null || tour.imageUrl() == null || tour.imageUrl().isBlank() ? null : tour.imageUrl();
+    }
+
+    private static boolean isValidTourImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return true;
+        if (imageUrl.length() > 1000) return false;
+        try {
+            URI uri = URI.create(imageUrl);
+            return ("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
+                    && uri.getHost() != null && uri.getUserInfo() == null;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }

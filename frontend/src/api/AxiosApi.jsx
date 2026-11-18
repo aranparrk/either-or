@@ -159,6 +159,8 @@ const AxiosApi = {
     return await api.get("/api/votes");
   },
 
+  searchTourSpots: (keyword) => api.get("/api/tour-spots", { params: { keyword } }),
+
   // 투표 상세 조회
   pollDetail: async (id) => {
     return await api.get(`/api/votes/${id}`);
@@ -168,13 +170,14 @@ const AxiosApi = {
   pollDelete: (id) => api.delete(`/api/votes/${id}`),
 
   // 투표 등록
-  pollCreate: async (title, content, options, deadline, contentImage) => {
+  pollCreate: async (title, content, options, deadline, contentImage, tourOptions) => {
     return await api.post("/api/votes", {
       title,
       content,
       options,
       deadline,
       contentImage,
+      tourOptions,
     });
   },
 

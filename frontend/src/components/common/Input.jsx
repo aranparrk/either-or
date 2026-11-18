@@ -19,17 +19,15 @@ const StyledInput = styled.input`
   &:focus {
     border-color: #373b3e;
   }
+
+  &[aria-invalid="true"] {
+    border-color: #bc5555;
+  }
 `;
 
-const Input = ({ type = "text", value, onChange, placeholder, disabled = false }) => {
+const Input = ({ type = "text", ...props }) => {
   return (
-    <StyledInput
-      disabled={disabled}
-      type={type}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-    />
+    <StyledInput type={type} {...props} />
   );
 };
 

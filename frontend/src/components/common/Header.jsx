@@ -7,7 +7,8 @@ import AxiosApi from "../../api/AxiosApi.jsx";
 const HeaderContainer = styled.header`
   width: 100%;
   height: 68px;
-  background-color: #eaeaec;
+  background-color: #f3f7f4;
+  border-bottom: 1px solid #dce7e1;
 `;
 
 const HeaderInner = styled.div`
@@ -19,25 +20,39 @@ const HeaderInner = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  @media (max-width: 560px) {
+    padding-inline: 14px;
+  }
 `;
 
 const LeftMenu = styled.nav`
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: clamp(12px, 3vw, 40px);
 `;
 
 const Logo = styled(Link)`
-  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(16px, 4vw, 20px);
   font-weight: 700;
-  color: #212121;
+  color: #174c42;
   text-decoration: none;
+  white-space: nowrap;
+
+  img {
+    width: 26px;
+    height: 26px;
+  }
 `;
 
 const MenuLink = styled(Link)`
   font-size: 14px;
   color: #333;
   text-decoration: none;
+  white-space: nowrap;
 
   &:hover {
     text-decoration: underline;
@@ -128,7 +143,7 @@ const Header = () => {
     <HeaderContainer>
       <HeaderInner>
         <LeftMenu>
-          <Logo to="/">⚖️ 양자택일</Logo>
+          <Logo to="/"><img src="/favicon.svg" alt="" />양자택일</Logo>
           <MenuLink to="/">투표 목록</MenuLink>
         </LeftMenu>
 
