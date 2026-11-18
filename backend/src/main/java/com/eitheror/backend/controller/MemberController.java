@@ -17,6 +17,14 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
     private final MemberService memberService;
 
+    // 회원 기존 비밀번호 확인
+    @Operation(summary = "기존비밀번호확인", description = "기존 비밀번호를 검사합니다.")
+    @PostMapping("/check-pwd")
+    public ResponseEntity<Boolean> checkPwd(@RequestBody MemberUpdateReqDto dto) {
+        return ResponseEntity.ok(memberService.checkCurrentPwd(dto.getCurrentPwd())
+        );
+    }
+
     // 회원 정보 수정
     @Operation(summary = "회원정보수정", description = "비밀번호와 프로필 이미지를 수정합니다.")
     @PatchMapping("/update")
