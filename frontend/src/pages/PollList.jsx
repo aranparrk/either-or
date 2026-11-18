@@ -49,6 +49,13 @@ const Sidebar = styled.aside`
   display: grid;
   gap: 20px;
 
+  @media (width > 1000px) {
+    position: sticky;
+    top: 20px;
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+  }
+
   @media (max-width: 1000px) {
     display: contents;
   }
