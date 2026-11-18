@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import TravelAuthLayout, { AuthDivider } from "../components/common/TravelAuthLayout.jsx";
 import AxiosApi from "../api/AxiosApi.jsx";
 import Button from "../components/common/Button.jsx";
+import FormFeedback from "../components/common/FormFeedback.jsx";
 import Input from "../components/common/Input.jsx";
 import ProfileChoice from "../components/common/ProfileChoice.jsx";
 import GoogleButton from "../components/common/GoogleButton.jsx";
@@ -15,46 +17,12 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PWD_REGEX =
   /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,20}$/;
 
-const Container = styled.div`
-  display: flex;
-  box-sizing: border-box;
-  width: 100%;
-  flex: 1;
-  justify-content: center;
-  align-items: center;
-  gap: 56px;
-  padding: 48px 24px;
-
-  @media (max-width: 820px) {
-    flex-direction: column;
-    gap: 32px;
-  }
-`;
-
-const Form1 = styled.div`
-  width: 100%;
-  max-width: 360px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-
-  > p {
-    margin-bottom: 20px;
-  }
-`;
-
 const Form2 = styled.form`
   width: 100%;
-  max-width: 400px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding: 36px;
   gap: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  background-color: white;
 
   > label:not(:first-of-type) {
     margin-top: 12px;
@@ -80,27 +48,6 @@ const Label = styled.label`
   font-weight: 600;
 `;
 
-const Caption1 = styled.p`
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #666;
-`;
-
-const Caption2 = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 24px;
-  gap: 14px;
-  background-color: rgb(234, 234, 234);
-  border-radius: 10px;
-  color: #666;
-  font-size: 13px;
-  line-height: 1.6;
-`;
-
 const Field = styled.div`
   display: flex;
   flex-direction: column;
@@ -114,25 +61,6 @@ const Message = styled.p`
   font-size: 12px;
   color: ${({ $valid }) => ($valid ? "#2e9e4f" : "#e5484d")};
 `;
-
-const SocialDivider = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 22px 0 8px;
-  color: #888;
-  font-size: 13px;
-  white-space: nowrap;
-
-  &::before,
-  &::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background-color: #e5e7eb;
-  }
-`;
-
 
 const BackButton = styled.button`
   padding: 8px;
@@ -169,6 +97,8 @@ const SignUp = () => {
   const [inputProfileId, setInputProfileId] = useState(0);
   const [inputPwdConfirm, setInputPwdConfirm] = useState("");
   const [emailStatus, setEmailStatus] = useState("idle");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupError, setSignupError] = useState("");
 
   const nav = useNavigate();
 
@@ -235,21 +165,21 @@ const SignUp = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!showEmailForm || !isAllValid) return;
+    if (!showEmailForm || !isAllValid || isSubmitting) return;
 
-    const response = await AxiosApi.memberSignup(
-      inputEmail,
-      inputPwd,
-      inputProfileId
-    );
-
-    console.log(response.data);
-
-    if (response.data === true) {
-      alert("회원가입이 완료되었습니다.");
-      nav("/login", { replace: true }); // 회원가입 완료 후 로그인 페이지로 이동
-    } else {
-      alert("회원 가입이 실패 했습니다.");
+    setIsSubmitting(true);
+    setSignupError("");
+    try {
+      const response = await AxiosApi.memberSignup(inputEmail, inputPwd, inputProfileId);
+      if (response.data === true) {
+        nav("/login", { replace: true });
+      } else {
+        setSignupError("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      }
+    } catch {
+      setSignupError("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -262,29 +192,7 @@ const SignUp = () => {
   };
 
   return (
-    <Container>
-      <Form1>
-        <Caption1>함께하는 즐거움!</Caption1>
-
-        <Title>
-          나의 선택으로
-          <br />
-          시작하는 이야기
-        </Title>
-
-        <Caption1>
-          계정을 만들고 투표에 참여해보세요!
-          <br />
-          의견을 나누고, 질문을 직접 등록할 수 있습니다.
-        </Caption1>
-
-        <Caption2>
-          <div>01 두 가지 선택 중 내 의견 남기기</div>
-          <div>02 참여 후 투표 현황 확인하기</div>
-          <div>03 궁금한 질문 투표로 만들기</div>
-        </Caption2>
-      </Form1>
-
+    <TravelAuthLayout>
       <Form2 onSubmit={onSubmit}>
         <Title>{showEmailForm ? "이메일로 가입하기" : "회원가입"}</Title>
 
@@ -337,25 +245,27 @@ const SignUp = () => {
             <Label>프로필</Label>
             <ProfileChoice onSelect={selectProfile} selectedId={inputProfileId} />
 
-            <Button type="submit" enabled={isAllValid}>
-              가입하기
+            <FormFeedback>{signupError}</FormFeedback>
+            <Button type="submit" enabled={isAllValid && !isSubmitting}>
+              {isSubmitting ? "가입 중…" : "가입하기"}
             </Button>
 
-            <BackButton type="button" onClick={() => setShowEmailForm(false)}>
+            <BackButton type="button" disabled={isSubmitting} onClick={() => {
+              setSignupError("");
+              setShowEmailForm(false);
+            }}>
               ← 가입 방식 다시 선택
             </BackButton>
           </>
         ) : (
           <>
-            <Caption1>원하는 방법으로 간편하게 시작하세요.</Caption1>
-
             <KakaoButton onClick={kakaoSignUp}>
               카카오로 가입하기
             </KakaoButton>
 
             <GoogleButton onClick={googleSignUp} />
 
-            <SocialDivider>또는</SocialDivider>
+            <AuthDivider />
 
             <Button type="button" enabled onClick={() => setShowEmailForm(true)}>
               이메일로 가입하기
@@ -365,7 +275,7 @@ const SignUp = () => {
 
         <LoginLink to="/login">이미 계정이 있나요? 로그인</LoginLink>
       </Form2>
-    </Container>
+    </TravelAuthLayout>
   );
 };
 

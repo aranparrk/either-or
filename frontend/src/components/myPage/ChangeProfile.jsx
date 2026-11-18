@@ -1,5 +1,6 @@
 import { useState } from "react";
 import styled from "styled-components";
+import FormFeedback from "../common/FormFeedback.jsx";
 
 import profile1 from "../../assets/profiles/profile1.png"
 import profile2 from "../../assets/profiles/profile2.png"
@@ -98,12 +99,14 @@ const ChangeProfile = ({
 }) => {
 
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   // 현재 선택한 기본 프로필
   const previewSrc = profiles[(Number(profileId ?? 1)) - 1];
 
   // 기본 프로필 선택
   const handleProfileSelect = (id) => {
+    setUploadError("");
     onProfileSelect(id);
   };
 
@@ -112,9 +115,10 @@ const ChangeProfile = ({
     const file = e.target.files[0];
 
     if (!file) return;
+    setUploadError("");
 
     if (!file.type.startsWith("image/")) {
-      alert("이미지 파일만 선택할 수 있습니다.");
+      setUploadError("이미지 파일만 선택할 수 있습니다.");
       e.target.value = "";
       return;
     }
@@ -128,11 +132,9 @@ const ChangeProfile = ({
       // 부모 컴포넌트에 이미지 주소 전달
       onImageUploaded(uploadedUrl);
 
-      alert("프로필 이미지가 적용되었습니다.");
-
     } catch (error) {
       console.error("이미지 업로드 실패:", error);
-      alert("이미지 업로드에 실패했습니다.");
+      setUploadError("이미지 업로드에 실패했습니다.");
 
     } finally {
       setUploading(false);
@@ -178,6 +180,7 @@ const ChangeProfile = ({
           disabled={uploading}
         />
       </ProfileList>
+      <FormFeedback>{uploadError}</FormFeedback>
 
     </ProfileSection>
   );

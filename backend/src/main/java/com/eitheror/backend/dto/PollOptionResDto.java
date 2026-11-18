@@ -10,4 +10,6 @@ import lombok.Setter;
 public class PollOptionResDto {
     private Long optionId;
     private String content;
+    private String contentId;
+    private String imageUrl;
 }

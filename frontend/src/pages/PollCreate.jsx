@@ -2,23 +2,22 @@ import { useState, useEffect } from "react";
 import styled from "styled-components";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
+import FormFeedback from "../components/common/FormFeedback.jsx";
 import AxiosApi from "../api/AxiosApi";
 import { currentMemberId } from "../api/currentMemberId";
 import { useNavigate, useParams } from "react-router-dom";
 import ImageUpload from "../components/common/ImageUpload.jsx";
+import TourOptionField from "../components/poll/TourOptionField.jsx";
 
 const Container = styled.div`
   box-sizing: border-box;
-  width: calc(100% - 32px);
-  max-width: 720px;
-  margin: 50px auto;
-  padding: 40px;
-  background-color: white;
-  border: 1px solid #e9e9e9;
-  border-radius: 16px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 44px 24px 56px;
 
   @media (max-width: 600px) {
-    padding: 24px 20px;
+    padding: 28px 16px 40px;
   }
 `;
 
@@ -37,26 +36,22 @@ const Description = styled.p`
 const Form = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  margin-top: 36px;
+  gap: 20px;
+  margin-top: 24px;
 `;
 
-const Field = styled.label`
+const Field = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 
-  span {
+  label {
     font-size: 14px;
     font-weight: 600;
   }
 
-  input {
-    border: 1px solid #e9e9e9;
-  }
-
-  input:focus {
-    border-color: #999;
+  > p {
+    margin: 0;
   }
 `;
 
@@ -73,9 +68,9 @@ const OptionRow = styled.div`
 const StyledTextarea = styled.textarea`
   box-sizing: border-box;
   width: 100%;
-  min-height: 140px;
-  padding: 16px;
-  background-color: #fafafa;
+  min-height: 88px;
+  padding: 12px 16px;
+  background-color: #fff;
   border: 1px solid #e9e9e9;
   border-radius: 10px;
   font: inherit;
@@ -88,12 +83,50 @@ const StyledTextarea = styled.textarea`
   }
 `;
 
+const CoverDetails = styled.details`
+  summary {
+    width: fit-content;
+    color: #205c50;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+`;
+
+const CoverBody = styled.div`
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+
+  img {
+    max-width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+  }
+
+  > button {
+    justify-self: start;
+  }
+`;
+
+const DeadlineField = styled(Field)`
+  width: min(100%, 320px);
+`;
+
 const ButtonRow = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px solid #e9e9e9;
 `;
+
+function defaultDeadline() {
+  const deadline = new Date();
+  deadline.setDate(deadline.getDate() + 7);
+  const localTime = deadline.getTime() - deadline.getTimezoneOffset() * 60_000;
+  return new Date(localTime).toISOString().slice(0, 16);
+}
 
 const PollCreate = () => {
   const { id } = useParams();
@@ -101,13 +134,17 @@ const PollCreate = () => {
   const [loadedId, setLoadedId] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [fieldError, setFieldError] = useState(null);
   const [totalVotes, setTotalVotes] = useState(0);
   const [originalDeadline, setOriginalDeadline] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [optionA, setOptionA] = useState("");
   const [optionB, setOptionB] = useState("");
-  const [deadline, setDeadline] = useState("");
+  const [tourA, setTourA] = useState(null);
+  const [tourB, setTourB] = useState(null);
+  const [deadline, setDeadline] = useState(() => isEdit ? "" : defaultDeadline());
   const [contentImage, setContentImage] = useState(null);
   const nav = useNavigate();
 
@@ -121,9 +158,13 @@ const PollCreate = () => {
         return;
       }
       setTitle(data.title);
-      setContent(data.content);
+      setContent(data.content ?? "");
       setOptionA(data.options[0].content);
       setOptionB(data.options[1].content);
+      const toSpot = ({ contentId, content, imageUrl }) =>
+        contentId ? { contentId, title: content, imageUrl } : null;
+      setTourA(toSpot(data.options[0]));
+      setTourB(toSpot(data.options[1]));
       setDeadline(data.deadline);
       setOriginalDeadline(data.deadline);
       setContentImage(data.contentImage);
@@ -135,44 +176,59 @@ const PollCreate = () => {
     return () => { active = false; };
   }, [id]);
 
+  const showFieldError = (field, message) => {
+    setFieldError({ field, message });
+    document.getElementById(field)?.focus();
+  };
+
+  const errorFor = (field) => fieldError?.field === field ? fieldError.message : "";
+
+  const updateField = (field, setter, value) => {
+    setter(value);
+    setFieldError((error) => error?.field === field ? null : error);
+  };
+
   const handleCreate = async () => {
     if (isSaving || (isEdit && loadedId !== id)) return;
+    setSaveError("");
+    setFieldError(null);
     if (title.trim() === "") {
-      alert("제목을 입력해주세요.");
+      showFieldError("poll-title", "제목을 입력해주세요.");
       return;
     }
 
-    if (optionA.trim() === "" || optionB.trim() === "") {
-      alert("선택지를 입력해주세요.");
+    if (title.length > 200) {
+      showFieldError("poll-title", "제목은 200자 이하로 입력해주세요.");
       return;
     }
 
-    if (!content.trim()) {
-      alert("내용을 입력해주세요.");
-      return;
-    }
-    if (title.length > 200 || optionA.length > 255 || optionB.length > 255) {
-      alert("제목은 200자, 선택지는 255자 이하로 입력해주세요.");
-      return;
+    for (const [field, option] of [["poll-option-a", optionA], ["poll-option-b", optionB]]) {
+      if (!option.trim() || option.length > 255) {
+        showFieldError(field, option.trim() ? "선택지는 255자 이하로 입력해주세요." : "선택지를 입력해주세요.");
+        return;
+      }
     }
     if (deadline === "" || (deadline !== originalDeadline && new Date(deadline) <= new Date())) {
-      alert("마감일자를 정확히 입력해주세요.");
+      showFieldError("poll-deadline", "현재 이후의 마감일시를 선택해주세요.");
       return;
     }
 
     try {
       setIsSaving(true);
+      const options = [optionA, optionB];
+      const tourOptions = [tourA, tourB].map((spot) =>
+        spot ? { contentId: spot.contentId, imageUrl: spot.imageUrl } : null
+      );
       if (isEdit) {
-        await AxiosApi.pollUpdate(id, { title, content, options: [optionA, optionB], deadline, contentImage });
+        await AxiosApi.pollUpdate(id, { title, content, options, deadline, contentImage, tourOptions });
       } else {
-        await AxiosApi.pollCreate(title, content, [optionA, optionB], deadline, contentImage);
+        await AxiosApi.pollCreate(title, content, options, deadline, contentImage, tourOptions);
       }
-      alert(isEdit ? "투표가 수정되었습니다." : "투표가 등록되었습니다.");
       nav(isEdit ? `/votes/${id}` : "/");
     } catch (error) {
       console.error("투표 등록 실패:", error);
       const status = error.response?.status;
-      alert(status === 403 ? "작성자만 수정할 수 있습니다." : status === 401 ? "로그인이 필요합니다." : status === 409 ? "참여자가 생겨 선택지를 수정할 수 없습니다. 페이지를 새로고침해주세요." : "저장에 실패했습니다. 입력 내용과 마감일시를 확인해주세요.");
+      setSaveError(status === 403 ? "작성자만 수정할 수 있습니다." : status === 401 ? "로그인이 필요합니다." : status === 409 ? "참여자가 생겨 선택지를 수정할 수 없습니다. 페이지를 새로고침해주세요." : "투표를 저장하지 못했습니다. 다시 시도해주세요.");
     } finally {
       setIsSaving(false);
     }
@@ -185,63 +241,68 @@ const PollCreate = () => {
   return (
     <Container>
       <Title>{isEdit ? "투표 수정" : "투표 등록"}</Title>
-      <Description>
-        {isEdit ? "참여자가 있는 투표는 선택지를 수정할 수 없습니다." : "두 가지 선택지를 등록하고 사람들의 의견을 들어보세요."}
-      </Description>
+      {isEdit && totalVotes > 0 && (
+        <Description>참여자가 있는 투표는 선택지를 수정할 수 없습니다.</Description>
+      )}
 
       <Form>
         <Field>
-          <span>투표 제목</span>
+          <label htmlFor="poll-title">투표 제목</label>
           <Input
+            id="poll-title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => updateField("poll-title", setTitle, e.target.value)}
+            aria-invalid={Boolean(errorFor("poll-title"))}
+            aria-describedby={errorFor("poll-title") ? "poll-title-error" : undefined}
             placeholder="투표 제목을 입력해주세요."
           />
+          <FormFeedback id="poll-title-error">{errorFor("poll-title")}</FormFeedback>
         </Field>
 
+        <OptionRow>
+          <TourOptionField id="poll-option-a" label="선택지 A" value={optionA}
+            onChange={(value) => updateField("poll-option-a", setOptionA, value)}
+            error={errorFor("poll-option-a")} selected={tourA}
+            onSelect={setTourA} disabled={isSaving || (isEdit && totalVotes > 0)} />
+          <TourOptionField id="poll-option-b" label="선택지 B" value={optionB}
+            onChange={(value) => updateField("poll-option-b", setOptionB, value)}
+            error={errorFor("poll-option-b")} selected={tourB}
+            onSelect={setTourB} disabled={isSaving || (isEdit && totalVotes > 0)} />
+        </OptionRow>
+
         <Field>
-          <span>내용</span>
+          <label htmlFor="poll-content">내용 (선택)</label>
           <StyledTextarea
+            id="poll-content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="투표에 대한 설명을 입력해주세요."
           />
-          {isEdit && contentImage && <img src={contentImage} alt="등록된 이미지" style={{ maxWidth: "100%", maxHeight: 250, objectFit: "contain" }} />}
-          <ImageUpload onImageSelect={setContentImage} />
-          {isEdit && contentImage && <Button enabled={!isSaving} size="short" onClick={() => setContentImage(null)}>이미지 삭제</Button>}
         </Field>
 
-        <OptionRow>
-          <Field>
-            <span>선택지 A</span>
-            <Input
-              disabled={isEdit && totalVotes > 0}
-              value={optionA}
-              onChange={(e) => setOptionA(e.target.value)}
-              placeholder="첫 번째 선택지"
-            />
-          </Field>
+        <CoverDetails>
+          <summary>{contentImage ? "대표 사진 보기" : "대표 사진 추가"}</summary>
+          <CoverBody>
+            {isEdit && contentImage && <img src={contentImage} alt="등록된 대표 사진" />}
+            <ImageUpload onImageSelect={setContentImage} />
+            {isEdit && contentImage && <Button enabled={!isSaving} size="small" onClick={() => setContentImage(null)}>사진 삭제</Button>}
+          </CoverBody>
+        </CoverDetails>
 
-          <Field>
-            <span>선택지 B</span>
-            <Input
-              disabled={isEdit && totalVotes > 0}
-              value={optionB}
-              onChange={(e) => setOptionB(e.target.value)}
-              placeholder="두 번째 선택지"
-            />
-          </Field>
-        </OptionRow>
-
-        <Field>
-          <span>투표 마감일시</span>
+        <DeadlineField>
+          <label htmlFor="poll-deadline">투표 마감일시</label>
           <Input
+            id="poll-deadline"
             type="datetime-local"
             value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
+            onChange={(e) => updateField("poll-deadline", setDeadline, e.target.value)}
+            aria-invalid={Boolean(errorFor("poll-deadline"))}
+            aria-describedby={errorFor("poll-deadline") ? "poll-deadline-error" : undefined}
           />
-        </Field>
+          <FormFeedback id="poll-deadline-error">{errorFor("poll-deadline")}</FormFeedback>
+        </DeadlineField>
 
+        <FormFeedback>{saveError}</FormFeedback>
         <ButtonRow>
           {isEdit && <Button enabled={!isSaving} size="short" onClick={() => nav(`/votes/${id}`)}>취소</Button>}
           <Button enabled={!isSaving} size="short" onClick={handleCreate}>

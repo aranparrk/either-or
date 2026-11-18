@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import AxiosApi from "../api/AxiosApi";
 import { currentMemberId } from "../api/currentMemberId";
 import styled from "styled-components";
 import CommentItem from "../components/comment/CommentItem";
 import Button from "../components/common/Button";
+import FormFeedback from "../components/common/FormFeedback.jsx";
 import { Client } from "@stomp/stompjs";
 
 const PageContainer = styled.div`
@@ -90,15 +91,9 @@ const PollContent = styled.p`
 `;
 
 const VoteSection = styled.section`
-  max-width: 680px;
-  margin: 0 auto 40px;
-  padding: 28px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-
-  @media (max-width: 600px) {
-    padding: 20px;
-  }
+  margin-bottom: 40px;
+  padding-top: 28px;
+  border-top: 1px solid #e5e7eb;
 `;
 
 const SectionTitle = styled.h3`
@@ -107,48 +102,66 @@ const SectionTitle = styled.h3`
   font-weight: 700;
 `;
 
-const OptionLabel = styled.label`
+const VoteHeading = styled.div`
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 12px;
-  padding: 16px;
+  margin-bottom: 24px;
+
+  ${SectionTitle} {
+    margin: 0;
+  }
+`;
+
+const TotalVotes = styled.span`
+  color: #666;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+`;
+
+const OptionGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(8px, 3vw, 16px);
   margin-bottom: 12px;
+`;
+
+const OptionImage = styled.img`
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+
+  &[hidden] {
+    display: none;
+  }
+`;
+
+const OptionButton = styled.button`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(8px, 2vw, 16px);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  overflow-wrap: anywhere;
   border: 1px solid ${({ $selected }) => ($selected ? "#373a40" : "#d1d5db")};
   border-radius: 4px;
   background-color: ${({ $selected }) => ($selected ? "#f1f2f4" : "#fafafa")};
   cursor: pointer;
   transition: 0.2s;
 
-  &:hover {
+  &:hover:not(:disabled),
+  &:focus-visible {
     border-color: #888;
   }
 
-  input {
-    accent-color: #373a40;
-  }
-
-  &:has(input:disabled) {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-`;
-
-const VoteButton = styled.button`
-  width: 100%;
-  margin-top: 8px;
-  padding: 14px;
-  background-color: #373a40;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-
   &:disabled {
-    background-color: #e9e9eb;
-    color: #999;
-    cursor: not-allowed;
+    cursor: wait;
   }
 `;
 
@@ -164,6 +177,8 @@ const Notice = styled.div`
 
 const CommentSection = styled.section`
   margin-top: 40px;
+  padding-top: 28px;
+  border-top: 1px solid #e5e7eb;
 `;
 
 const CommentInput = styled.textarea`
@@ -231,12 +246,34 @@ const AuthorButton = styled.button`
 `;
 
 const ResultBar = styled.div`
+  position: relative;
   display: flex;
   width: 100%;
-  height: 12px;
+  height: 25px;
   background-color: #e9e9eb;
-  border-radius: 6px;
+  border-radius: 12.5px;
   overflow: hidden;
+`;
+
+const ResultBarLabels = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 6px;
+`;
+
+const ResultBarLabel = styled.span`
+  padding: 1px 6px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.93);
+  color: #242424;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  white-space: nowrap;
 `;
 
 const ResultFill = styled.div`
@@ -245,30 +282,67 @@ const ResultFill = styled.div`
   transition: width 0.2s ease;
 `;
 
-const ResultLabels = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 12px;
+const ResultCard = styled.div`
+  padding: clamp(8px, 2vw, 16px);
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+`;
 
-  > div {
-    flex: 1;
-    min-width: 0;
-    overflow-wrap: anywhere;
+const ResultOptionButton = styled(ResultCard).attrs({
+  as: "button",
+  type: "button",
+})`
+  background-color: ${({ $selected }) => ($selected ? "#f1f2f4" : "#fafafa")};
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    border-color: #373a40;
   }
 
-  > div:last-child {
-    text-align: right;
+  &:disabled {
+    cursor: wait;
+  }
+`;
+
+const ResultOptionName = styled.span`
+  display: block;
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 700;
+
+  ${OptionImage}:not([hidden]) + & {
+    margin-top: 10px;
   }
 `;
 
 const ResultDot = styled.span`
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 6px;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  vertical-align: middle;
   border-radius: 50%;
   background-color: ${({ $second }) => ($second ? "#a8b5c7" : "#373a40")};
+`;
+
+const WinnerBadge = styled.span`
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #e8edf3;
+  color: #35455a;
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+  white-space: nowrap;
 `;
 
 // 상세페이지에 이미지 추가
@@ -281,11 +355,27 @@ const PollImage = styled.img`
   margin: 28px auto 0;
 `;
 
+function PollOptionImage({ option }) {
+  if (!option.imageUrl) return null;
+  return (
+    <OptionImage
+      src={option.imageUrl}
+      alt=""
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={(event) => {
+        event.currentTarget.hidden = true;
+      }}
+    />
+  );
+}
+
 const PollDetail = () => {
   const { id } = useParams();
   const nav = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   const handleDelete = async () => {
     if (
@@ -296,12 +386,13 @@ const PollDetail = () => {
     )
       return;
     setIsDeleting(true);
+    setDeleteError("");
     try {
       await AxiosApi.pollDelete(id);
       nav("/", { replace: true });
     } catch (error) {
       const status = error.response?.status;
-      alert(
+      setDeleteError(
         status === 403
           ? "작성자만 삭제할 수 있습니다."
           : status === 401
@@ -314,12 +405,15 @@ const PollDetail = () => {
   };
 
   const [poll, setPoll] = useState(null);
-  const [selectedOptionId, setSelectedOptionId] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingOptionId, setPendingOptionId] = useState(null);
+  const voteInFlight = useRef(false);
   const [result, setResult] = useState(null);
   const [resultError, setResultError] = useState("");
+  const [voteError, setVoteError] = useState("");
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
+  const [commentError, setCommentError] = useState("");
+  const [isCommentSaving, setIsCommentSaving] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
@@ -434,26 +528,42 @@ const PollDetail = () => {
   }
 
   const isClosed = new Date(poll.deadline) <= new Date();
+  const optionResults = (poll.options ?? []).map((option) => {
+    const tally = result?.options.find(
+      (item) => item.optionId === option.optionId
+    );
+    return {
+      option,
+      voteCount: tally?.voteCount ?? 0,
+      percentage: tally?.percentage ?? 0,
+    };
+  });
+  const highestVoteCount = Math.max(0, ...optionResults.map(({ voteCount }) => voteCount));
+  const winningOptionId = isClosed && highestVoteCount > 0
+    && optionResults.filter(({ voteCount }) => voteCount === highestVoteCount).length === 1
+    ? optionResults.find(({ voteCount }) => voteCount === highestVoteCount).option.optionId
+    : null;
 
-  const handleVote = async () => {
-    if (selectedOptionId === null || isClosed || isSubmitting) {
+  const handleVote = async (optionId) => {
+    if (isClosed || voteInFlight.current) {
       return;
     }
 
+    voteInFlight.current = true;
+    setPendingOptionId(optionId);
+    setVoteError("");
     try {
-      setIsSubmitting(true);
-
       if (hasVoted) {
         // 이미 투표한 경우 PUT
-        await AxiosApi.voteUpdate(id, selectedOptionId);
+        await AxiosApi.voteUpdate(id, optionId);
       } else {
         try {
           // 최초 투표 POST
-          await AxiosApi.voteCreate(id, selectedOptionId);
+          await AxiosApi.voteCreate(id, optionId);
         } catch (error) {
           if (error.response?.status === 409) {
             // 이전에 투표한 사용자라면 PUT으로 변경
-            await AxiosApi.voteUpdate(id, selectedOptionId);
+            await AxiosApi.voteUpdate(id, optionId);
           } else {
             throw error;
           }
@@ -463,7 +573,8 @@ const PollDetail = () => {
       setHasVoted(true);
 
       // 투표 성공 후 결과 조회
-      setResult(null);
+      setResultError("");
+      setShowResult(true);
 
       try {
         const response = await AxiosApi.voteResult(id);
@@ -473,44 +584,42 @@ const PollDetail = () => {
         console.error("투표 결과 조회 실패:", error);
         setResultError("투표는 반영됐지만 결과를 불러오지 못했습니다.");
       }
-
-      setShowResult(true);
     } catch (error) {
       console.error("투표 처리 실패:", error);
 
       if (error.response?.status === 401) {
-        alert("로그인이 필요합니다.");
+        setVoteError("로그인이 필요합니다.");
       } else if (error.response?.status === 403) {
-        alert("투표를 변경할 권한이 없습니다.");
+        setVoteError("투표를 변경할 권한이 없습니다.");
       } else {
-        alert("투표 처리 중 오류가 발생했습니다.");
+        setVoteError("투표 처리 중 오류가 발생했습니다.");
       }
     } finally {
-      setIsSubmitting(false);
+      voteInFlight.current = false;
+      setPendingOptionId(null);
     }
   };
 
   const handleCommentCreate = async () => {
-    if (commentText.trim() === "") {
-      alert("댓글을 입력해주세요.");
-      return;
-    }
+    if (isCommentSaving || !commentText.trim()) return;
 
+    setIsCommentSaving(true);
+    setCommentError("");
     try {
       await AxiosApi.commentCreate(id, commentText);
-
       setCommentText("");
-
-      const response = await AxiosApi.commentList(id);
-      setComments(response.data);
+      try {
+        const response = await AxiosApi.commentList(id);
+        setComments(response.data);
+      } catch (error) {
+        console.error("댓글 목록 조회 실패:", error);
+        setCommentError("댓글은 등록됐지만 목록을 불러오지 못했습니다.");
+      }
     } catch (error) {
       console.error("댓글 등록 실패:", error);
-
-      if (error.response?.status === 401) {
-        alert("로그인이 필요합니다.");
-      } else {
-        alert("댓글 등록에 실패했습니다.");
-      }
+      setCommentError(error.response?.status === 401 ? "로그인이 필요합니다." : "댓글 등록에 실패했습니다.");
+    } finally {
+      setIsCommentSaving(false);
     }
   };
 
@@ -526,7 +635,17 @@ const PollDetail = () => {
                 disabled={isDeleting}
                 onClick={() => nav(`/votes/${id}/edit`)}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="m16 3 5 5-12 12-6 1 1-6L16 3Z" />
                   <path d="m13 6 5 5" />
                 </svg>
@@ -538,7 +657,17 @@ const PollDetail = () => {
                 disabled={isDeleting}
                 onClick={handleDelete}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
                 </svg>
                 {isDeleting ? "삭제 중..." : "삭제"}
@@ -546,6 +675,7 @@ const PollDetail = () => {
             </AuthorActions>
           )}
         </TitleRow>
+        <FormFeedback>{deleteError}</FormFeedback>
 
         <PollMeta>
           <StatusBadge $closed={isClosed}>
@@ -555,64 +685,83 @@ const PollDetail = () => {
           <span>마감일: {new Date(poll.deadline).toLocaleString("ko-KR")}</span>
         </PollMeta>
 
-        <PollContent>{poll.content}</PollContent>
+        {poll.content?.trim() && <PollContent>{poll.content}</PollContent>}
         {poll.contentImage && (
           <PollImage src={poll.contentImage} alt="이미지" />
         )}
       </PollHeader>
 
       <VoteSection>
-        <SectionTitle>
-          {isClosed || showResult ? "투표 결과" : "투표하기"}
-        </SectionTitle>
+        <VoteHeading>
+          <SectionTitle>
+            {isClosed || showResult ? "투표 결과" : "투표하기"}
+          </SectionTitle>
+          {(isClosed || showResult) && result && <TotalVotes>총 {result.totalVotes}표</TotalVotes>}
+        </VoteHeading>
 
         {isClosed || showResult ? (
           result ? (
             <>
-              <p>총 {result.totalVotes}표</p>
+              {!isClosed && <p>다른 선택지를 누르면 투표가 변경됩니다.</p>}
 
-              <ResultLabels>
-                {(poll.options ?? []).map((option, index) => {
-                  const optionResult = result.options.find(
-                    (item) => item.optionId === option.optionId
-                  );
-                  return (
-                    <div key={option.optionId}>
-                      <p>
-                        <ResultDot $second={index === 1} />
+              <OptionGrid>
+                {optionResults.map(({ option }, index) => {
+                  const card = (
+                    <>
+                      <PollOptionImage option={option} />
+                      <ResultOptionName>
+                        <ResultDot $second={index === 1} aria-hidden="true" />
                         {option.content}
-                      </p>
-                      <span>
-                        {optionResult?.voteCount ?? 0}표 ·{" "}
-                        {(optionResult?.percentage ?? 0).toFixed(1)}%
-                      </span>
-                    </div>
+                        {option.optionId === winningOptionId && <WinnerBadge>최다 득표</WinnerBadge>}
+                      </ResultOptionName>
+                    </>
                   );
-                })}
-              </ResultLabels>
-              <ResultBar aria-hidden="true">
-                {(poll.options ?? []).map((option, index) => {
-                  const optionResult = result.options.find(
-                    (item) => item.optionId === option.optionId
-                  );
-                  return (
-                    <ResultFill
+                  return isClosed ? (
+                    <ResultCard key={option.optionId}>{card}</ResultCard>
+                  ) : (
+                    <ResultOptionButton
                       key={option.optionId}
-                      $second={index === 1}
-                      style={{ width: `${optionResult?.percentage ?? 0}%` }}
-                    />
+                      $selected={pendingOptionId === option.optionId}
+                      disabled={pendingOptionId !== null}
+                      onClick={() => handleVote(option.optionId)}
+                    >
+                      {card}
+                    </ResultOptionButton>
                   );
                 })}
+              </OptionGrid>
+              <ResultBar>
+                {optionResults.map(({ option, percentage }, index) => (
+                  <ResultFill
+                    key={option.optionId}
+                    $second={index === 1}
+                    style={{ width: `${percentage}%` }}
+                    aria-hidden="true"
+                  />
+                ))}
+                <ResultBarLabels>
+                  {optionResults.map(({ option, voteCount, percentage }) => {
+                    const label = `${voteCount}표 · ${percentage.toLocaleString(
+                      "ko-KR",
+                      { maximumFractionDigits: 1 }
+                    )}%`;
+                    return (
+                      <ResultBarLabel
+                        key={option.optionId}
+                        aria-label={`${option.content}, ${label}`}
+                      >
+                        {label}
+                      </ResultBarLabel>
+                    );
+                  })}
+                </ResultBarLabels>
               </ResultBar>
 
-              {!isClosed && (
-                <VoteButton
-                  type="button"
-                  style={{ marginTop: "24px" }}
-                  onClick={() => setShowResult(false)}
-                >
-                  선택 변경하기
-                </VoteButton>
+              {pendingOptionId !== null && (
+                <Notice role="status">투표 처리 중…</Notice>
+              )}
+              {resultError && pendingOptionId === null && (
+                <Notice role="status">{resultError}</Notice>
               )}
             </>
           ) : (
@@ -620,33 +769,28 @@ const PollDetail = () => {
           )
         ) : (
           <>
-            {(poll.options ?? []).map((option) => (
-              <OptionLabel
-                key={option.optionId}
-                $selected={selectedOptionId === option.optionId}
-              >
-                <input
-                  type="radio"
-                  name="pollOption"
-                  value={option.optionId}
-                  checked={selectedOptionId === option.optionId}
-                  onChange={() => setSelectedOptionId(option.optionId)}
-                />
-                {option.content}
-              </OptionLabel>
-            ))}
+            <OptionGrid>
+              {(poll.options ?? []).map((option) => (
+                <OptionButton
+                  key={option.optionId}
+                  type="button"
+                  $selected={pendingOptionId === option.optionId}
+                  disabled={pendingOptionId !== null}
+                  onClick={() => handleVote(option.optionId)}
+                >
+                  <PollOptionImage option={option} />
+                  <span>{option.content}</span>
+                </OptionButton>
+              ))}
+            </OptionGrid>
 
-            <VoteButton
-              disabled={selectedOptionId === null || isSubmitting}
-              onClick={handleVote}
-            >
-              {isSubmitting ? "처리 중..." : "투표하기"}
-            </VoteButton>
+            {pendingOptionId !== null && (
+              <Notice role="status">투표 처리 중…</Notice>
+            )}
           </>
         )}
+        <FormFeedback>{voteError}</FormFeedback>
       </VoteSection>
-
-
 
       <CommentSection>
         <SectionTitle>댓글</SectionTitle>
@@ -676,13 +820,18 @@ const PollDetail = () => {
         )}
         <CommentInput
           value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
+          onChange={(e) => {
+            setCommentText(e.target.value);
+            setCommentError("");
+          }}
+          disabled={isCommentSaving}
           placeholder="이 질문에 대한 생각을 남겨주세요."
         />
 
+        <FormFeedback>{commentError}</FormFeedback>
         <ButtonRow>
-          <Button enabled={true} size="short" onClick={handleCommentCreate}>
-            댓글 등록
+          <Button enabled={Boolean(commentText.trim()) && !isCommentSaving} size="short" onClick={handleCommentCreate}>
+            {isCommentSaving ? "등록 중…" : "댓글 등록"}
           </Button>
         </ButtonRow>
       </CommentSection>
