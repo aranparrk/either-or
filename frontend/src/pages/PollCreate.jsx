@@ -28,9 +28,10 @@ const Title = styled.h2`
 `;
 
 const Description = styled.p`
-  margin: 10px 0 0;
-  color: #888;
+  margin: 0;
+  color: ${({ $highlighted }) => ($highlighted ? "#a32b2b" : "#666")};
   font-size: 14px;
+  font-weight: ${({ $highlighted }) => ($highlighted ? 600 : 400)};
 `;
 
 const Form = styled.div`
@@ -59,6 +60,14 @@ const OptionRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+
+  ${({ $locked }) => $locked && `
+    cursor: not-allowed;
+
+    > fieldset {
+      pointer-events: none;
+    }
+  `}
 
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
@@ -137,6 +146,7 @@ const PollCreate = () => {
   const [saveError, setSaveError] = useState("");
   const [fieldError, setFieldError] = useState(null);
   const [totalVotes, setTotalVotes] = useState(0);
+  const [showDeadlineHint, setShowDeadlineHint] = useState(false);
   const deadlineOnly = isEdit && totalVotes > 0;
   const [originalDeadline, setOriginalDeadline] = useState("");
   const [title, setTitle] = useState("");
@@ -187,6 +197,15 @@ const PollCreate = () => {
   const updateField = (field, setter, value) => {
     setter(value);
     setFieldError((error) => error?.field === field ? null : error);
+  };
+
+  const redirectToDeadline = (event) => {
+    if (!deadlineOnly) return;
+    event.preventDefault();
+    setShowDeadlineHint(true);
+    const input = document.getElementById("poll-deadline");
+    input?.focus({ preventScroll: true });
+    input?.scrollIntoView({ block: "center" });
   };
 
   const handleCreate = async () => {
@@ -242,26 +261,23 @@ const PollCreate = () => {
   return (
     <Container>
       <Title>{isEdit ? "투표 수정" : "투표 등록"}</Title>
-      {deadlineOnly && (
-        <Description>이미 참여자가 있는 투표는 마감일시만 수정할 수 있어요.</Description>
-      )}
 
       <Form>
-        <Field>
+        <Field onClick={deadlineOnly ? redirectToDeadline : undefined}>
           <label htmlFor="poll-title">투표 제목</label>
           <Input
             id="poll-title"
             readOnly={deadlineOnly}
+            aria-describedby={deadlineOnly ? "poll-deadline-hint" : errorFor("poll-title") ? "poll-title-error" : undefined}
             value={title}
             onChange={(e) => updateField("poll-title", setTitle, e.target.value)}
             aria-invalid={Boolean(errorFor("poll-title"))}
-            aria-describedby={errorFor("poll-title") ? "poll-title-error" : undefined}
             placeholder="투표 제목을 입력해주세요."
           />
           <FormFeedback id="poll-title-error">{errorFor("poll-title")}</FormFeedback>
         </Field>
 
-        <OptionRow>
+        <OptionRow $locked={deadlineOnly} onClick={deadlineOnly ? redirectToDeadline : undefined}>
           <TourOptionField id="poll-option-a" label="선택지 A" value={optionA}
             onChange={(value) => updateField("poll-option-a", setOptionA, value)}
             error={errorFor("poll-option-a")} selected={tourA}
@@ -272,11 +288,12 @@ const PollCreate = () => {
             onSelect={setTourB} disabled={isSaving || deadlineOnly} />
         </OptionRow>
 
-        <Field>
+        <Field onClick={deadlineOnly ? redirectToDeadline : undefined}>
           <label htmlFor="poll-content">내용 (선택)</label>
           <StyledTextarea
             id="poll-content"
             readOnly={deadlineOnly}
+            aria-describedby={deadlineOnly ? "poll-deadline-hint" : undefined}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="투표에 대한 설명을 입력해주세요."
@@ -300,8 +317,13 @@ const PollCreate = () => {
             value={deadline}
             onChange={(e) => updateField("poll-deadline", setDeadline, e.target.value)}
             aria-invalid={Boolean(errorFor("poll-deadline"))}
-            aria-describedby={errorFor("poll-deadline") ? "poll-deadline-error" : undefined}
+            aria-describedby={errorFor("poll-deadline") ? "poll-deadline-error" : deadlineOnly ? "poll-deadline-hint" : undefined}
           />
+          {deadlineOnly && (
+            <Description id="poll-deadline-hint" $highlighted={showDeadlineHint} role="status">
+              이미 참여자가 있는 투표는 마감일시만 수정할 수 있어요.
+            </Description>
+          )}
           <FormFeedback id="poll-deadline-error">{errorFor("poll-deadline")}</FormFeedback>
         </DeadlineField>
 
