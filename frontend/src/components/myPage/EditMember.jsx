@@ -39,6 +39,9 @@ const EditMember = () => {
         setProfileChanged(true);
     }
 
+    // 프로필을 변경 여부 확인
+    const profileChange = profileChanged;
+
     // 회원 정보 변경
     const handleMemberUpdate = async () => {
 
@@ -56,9 +59,6 @@ const EditMember = () => {
                 return;
             }
         }
-
-        // 프로필을 변경 여부 확인
-        const profileChange = profileChanged;
 
         // 변경할 정보가 있는지 확인
         if (!pwdChange && !profileChange) {
