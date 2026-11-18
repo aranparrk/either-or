@@ -145,6 +145,11 @@ const AxiosApi = {
     return await api.post("/api/auth/logout");
   },
 
+    // 회원탈퇴
+  memberWithdraw: async () => {
+    return await api.delete("/api/auth/withdraw")
+  },
+
   // ====================================
   // 투표 게시글 API
   // ====================================
@@ -247,12 +252,6 @@ const AxiosApi = {
       profileId,
     });
   },
-
-  // 내가 쓴 투표 조회
-
-  // 내가 쓴 댓글 조회
-
-  // 회원탈퇴
 };
 
 export default AxiosApi;

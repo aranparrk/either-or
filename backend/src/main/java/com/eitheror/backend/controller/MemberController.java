@@ -24,13 +24,4 @@ public class MemberController {
         return ResponseEntity.ok(memberService.memberUpdate(dto));
     }
 
-    // 내가 쓴 투표 조회
-
-
-    // 내가 쓴 댓글 조회
-
-
-    // 회원탈퇴
-
-
 }

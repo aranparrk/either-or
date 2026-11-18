@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import styled from "styled-components";
 import AxiosApi from "../api/AxiosApi";
 import EditMember from "../components/myPage/EditMember.jsx";
+import Withdraw from "../components/myPage/Withdraw.jsx"
 
 // 전체 영역
 const Container = styled.div`
@@ -267,9 +268,11 @@ const MyPage = () => {
       </Menu>
 
       <Content>
+        {/* 회원정보 */}
         {activeTab === "info" && (
           <>
             <EditMember />
+            <Withdraw />
           </>
         )}
 

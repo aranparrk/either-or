@@ -2,6 +2,7 @@ package com.eitheror.backend.repository;
 
 import com.eitheror.backend.entity.Comment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -31,6 +32,21 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
         ORDER BY c.regDate DESC
     """)
     List<Comment> findMyComments(
+            @Param("memberId") Long memberId
+    );
+
+    // 회원 탈퇴시 회원이 작성한 모든 댓글, 회원이 작성한 게시글에 달린 모든 댓글 삭제
+    @Modifying
+    @Query("""
+        DELETE FROM Comment c
+        WHERE c.member.memberId = :memberId
+            OR c.poll.pollId IN (
+                SELECT p.pollId
+                FROM Poll p
+                WHERE p.member.memberId = :memberId
+            )
+    """)
+    void deleteAllByMemberIdForWithdrawal(
             @Param("memberId") Long memberId
     );
 }

@@ -1,6 +1,7 @@
 
 package com.eitheror.backend.config;
 
+import com.eitheror.backend.repository.MemberRepository;
 import com.eitheror.backend.security.JwtFilter;
 import com.eitheror.backend.security.OAuth2LoginSuccessHandler;
 import com.eitheror.backend.security.TokenProvider;
@@ -70,7 +71,8 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain filterChain(
             HttpSecurity http,
-            TokenProvider tokenProvider
+            TokenProvider tokenProvider,
+            MemberRepository memberRepository
     ) throws Exception {
 
         http
@@ -135,7 +137,7 @@ public class SecurityConfig {
 
                 // JWT 필터 등록
                 .addFilterBefore(
-                        new JwtFilter(tokenProvider),
+                        new JwtFilter(tokenProvider, memberRepository),
                         UsernamePasswordAuthenticationFilter.class
                 );
 

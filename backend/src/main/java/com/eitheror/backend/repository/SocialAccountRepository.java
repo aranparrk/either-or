@@ -20,4 +20,7 @@ public interface SocialAccountRepository extends CrudRepository<SocialAccount, L
             Member member,
             SocialProvider provider
     );
+
+    // 회원과 연결된 소셜 계정 정보 삭제
+    void deleteByMember(Member member);
 }
