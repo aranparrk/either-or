@@ -1,6 +1,8 @@
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AxiosApi from "../../api/AxiosApi";
 import styled from "styled-components";
+import FormFeedback from "../common/FormFeedback.jsx";
 
 const ActionButton = styled.button`
   display: block;
@@ -10,56 +12,125 @@ const ActionButton = styled.button`
   color: #777;
   font-size: 14px;
   cursor: pointer;
-  transition: color 0.15s ease;
 
-  &:hover:not(:disabled) {
+  &:hover {
     color: #242424;
   }
 `;
 
-const Withdraw = () => {
+const ConfirmDialog = styled.dialog`
+  box-sizing: border-box;
+  width: min(420px, calc(100% - 32px));
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  color: #242424;
+  background: #fff;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .16);
 
-    const nav = useNavigate();
+  &::backdrop {
+    background: rgba(0, 0, 0, .4);
+  }
 
-    // 회원 탈퇴
-    const handleWithdraw = async () => {
-        // 탈퇴 여부 확인
-        const confirmWithdraw = window.confirm(
-            "정말 회원 탈퇴를 진행하시겠습니까?\n탈퇴를 하면 작성하신 게시글, 댓글 및 모든 정보가 삭제되며 복구할 수 없습니다.\n탈퇴를 원하시면 확인을 눌러주세요."
-        )
+  h2 {
+    margin: 0 0 10px;
+    font-size: 20px;
+  }
 
-        // 취소를 누르면 탈퇴 취소
-        if (!confirmWithdraw) {
-            return
-        }
+  h2 + p {
+    margin: 0;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+`;
 
-        // 확인을 누르면 탈퇴 진행
-        try {
-            await AxiosApi.memberWithdraw();
+const Actions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
 
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            localStorage.removeItem("isLogin");
-            localStorage.removeItem("email");
-            localStorage.removeItem("profileId");
-            localStorage.removeItem("imageUrl");
+  button {
+    padding: 9px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    color: #242424;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
 
-            // 탈퇴 상태 변경 알림
-            window.dispatchEvent(new Event("authChanged"))
-            alert("회원 탈퇴가 완료되었습니다.")
-            nav("/login", { replace: true });
+  button:last-child {
+    border-color: #a32b2b;
+    background: #a32b2b;
+    color: #fff;
+  }
 
-        } catch (error) {
-            console.error("회원탈퇴 실패:", error);
-            alert("회원탈퇴에 실패했습니다. 다시 시도해주세요.");
-        }
-    };
+  button:disabled {
+    opacity: .6;
+    cursor: wait;
+  }
+`;
 
-    return (
-        <ActionButton onClick={handleWithdraw}>
-            회원탈퇴
-        </ActionButton>
-    )
+export default function Withdraw() {
+  const dialogRef = useRef(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [error, setError] = useState("");
+  const nav = useNavigate();
+
+  const handleWithdraw = async () => {
+    if (isWithdrawing) return;
+    setError("");
+    setIsWithdrawing(true);
+
+    try {
+      await AxiosApi.memberWithdraw();
+
+      for (const key of ["accessToken", "refreshToken", "isLogin", "email", "profileId", "imageUrl"]) {
+        localStorage.removeItem(key);
+      }
+      window.dispatchEvent(new Event("authChanged"));
+      dialogRef.current?.close();
+      nav("/login", { replace: true });
+    } catch (error) {
+      setError(error.response?.status === 401
+        ? "로그인 시간이 만료됐어요. 다시 로그인해주세요."
+        : "회원탈퇴를 처리하지 못했어요. 다시 시도해주세요.");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  return (
+    <>
+      <ActionButton type="button" onClick={() => {
+        setError("");
+        dialogRef.current?.showModal();
+      }}>
+        회원탈퇴
+      </ActionButton>
+      <ConfirmDialog
+        ref={dialogRef}
+        aria-labelledby="withdraw-title"
+        aria-describedby="withdraw-description"
+        onCancel={(event) => {
+          if (isWithdrawing) event.preventDefault();
+        }}
+      >
+        <h2 id="withdraw-title">회원 탈퇴</h2>
+        <p id="withdraw-description">계정과 작성한 투표·댓글이 삭제되며 복구할 수 없어요.</p>
+        <FormFeedback>{error}</FormFeedback>
+        <Actions>
+          <button type="button" autoFocus disabled={isWithdrawing} onClick={() => dialogRef.current?.close()}>
+            취소
+          </button>
+          <button type="button" disabled={isWithdrawing} onClick={handleWithdraw}>
+            {isWithdrawing ? "탈퇴 처리 중…" : "탈퇴하기"}
+          </button>
+        </Actions>
+      </ConfirmDialog>
+    </>
+  );
 }
-
-export default Withdraw;
