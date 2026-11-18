@@ -56,11 +56,21 @@ const EditMember = () => {
         const pwdChange = currentPwd || newPwd || confirmPwd;
 
         if (pwdChange) {
+            // 비밀번호 입력칸 확인
             if (!currentPwd || !newPwd || !confirmPwd) {
                 setSaveError("비밀번호 입력칸을 모두 작성해 주세요.");
                 return;
             }
 
+             // 기존 비밀번호 확인
+            const checkCurrentPwd = await AxiosApi.checkCurrentPwd(currentPwd);
+
+            if (checkCurrentPwd.data !== true) {
+                setSaveError("기존 비밀번호가 일치하지 않습니다.");
+                return;
+            }
+
+            // 새 비밀번호와 새비밀번호 확인 일치 확인
             if (newPwd !== confirmPwd) {
                 setSaveError("새 비밀번호가 일치하지 않습니다.");
                 return;
