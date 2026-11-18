@@ -137,6 +137,7 @@ const PollCreate = () => {
   const [saveError, setSaveError] = useState("");
   const [fieldError, setFieldError] = useState(null);
   const [totalVotes, setTotalVotes] = useState(0);
+  const deadlineOnly = isEdit && totalVotes > 0;
   const [originalDeadline, setOriginalDeadline] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -228,7 +229,7 @@ const PollCreate = () => {
     } catch (error) {
       console.error("투표 등록 실패:", error);
       const status = error.response?.status;
-      setSaveError(status === 403 ? "작성자만 수정할 수 있습니다." : status === 401 ? "로그인이 필요합니다." : status === 409 ? "참여자가 생겨 선택지를 수정할 수 없습니다. 페이지를 새로고침해주세요." : "투표를 저장하지 못했습니다. 다시 시도해주세요.");
+      setSaveError(status === 403 ? "작성자만 수정할 수 있습니다." : status === 401 ? "로그인이 필요합니다." : status === 409 ? "참여자가 있는 투표는 마감일시만 수정할 수 있습니다. 페이지를 새로고침해주세요." : "투표를 저장하지 못했습니다. 다시 시도해주세요.");
     } finally {
       setIsSaving(false);
     }
@@ -241,8 +242,8 @@ const PollCreate = () => {
   return (
     <Container>
       <Title>{isEdit ? "투표 수정" : "투표 등록"}</Title>
-      {isEdit && totalVotes > 0 && (
-        <Description>참여자가 있는 투표는 선택지를 수정할 수 없습니다.</Description>
+      {deadlineOnly && (
+        <Description>이미 참여자가 있는 투표는 마감일시만 수정할 수 있어요.</Description>
       )}
 
       <Form>
@@ -250,6 +251,7 @@ const PollCreate = () => {
           <label htmlFor="poll-title">투표 제목</label>
           <Input
             id="poll-title"
+            readOnly={deadlineOnly}
             value={title}
             onChange={(e) => updateField("poll-title", setTitle, e.target.value)}
             aria-invalid={Boolean(errorFor("poll-title"))}
@@ -263,31 +265,32 @@ const PollCreate = () => {
           <TourOptionField id="poll-option-a" label="선택지 A" value={optionA}
             onChange={(value) => updateField("poll-option-a", setOptionA, value)}
             error={errorFor("poll-option-a")} selected={tourA}
-            onSelect={setTourA} disabled={isSaving || (isEdit && totalVotes > 0)} />
+            onSelect={setTourA} disabled={isSaving || deadlineOnly} />
           <TourOptionField id="poll-option-b" label="선택지 B" value={optionB}
             onChange={(value) => updateField("poll-option-b", setOptionB, value)}
             error={errorFor("poll-option-b")} selected={tourB}
-            onSelect={setTourB} disabled={isSaving || (isEdit && totalVotes > 0)} />
+            onSelect={setTourB} disabled={isSaving || deadlineOnly} />
         </OptionRow>
 
         <Field>
           <label htmlFor="poll-content">내용 (선택)</label>
           <StyledTextarea
             id="poll-content"
+            readOnly={deadlineOnly}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="투표에 대한 설명을 입력해주세요."
           />
         </Field>
 
-        <CoverDetails>
+        {(!deadlineOnly || contentImage) && <CoverDetails>
           <summary>{contentImage ? "대표 사진 보기" : "대표 사진 추가"}</summary>
           <CoverBody>
             {isEdit && contentImage && <img src={contentImage} alt="등록된 대표 사진" />}
-            <ImageUpload onImageSelect={setContentImage} />
-            {isEdit && contentImage && <Button enabled={!isSaving} size="small" onClick={() => setContentImage(null)}>사진 삭제</Button>}
+            {!deadlineOnly && <ImageUpload onImageSelect={setContentImage} />}
+            {!deadlineOnly && isEdit && contentImage && <Button enabled={!isSaving} size="small" onClick={() => setContentImage(null)}>사진 삭제</Button>}
           </CoverBody>
-        </CoverDetails>
+        </CoverDetails>}
 
         <DeadlineField>
           <label htmlFor="poll-deadline">투표 마감일시</label>

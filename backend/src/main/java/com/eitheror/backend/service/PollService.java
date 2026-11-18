@@ -284,15 +284,18 @@ public class PollService {
             );
         }
 
-        boolean changed = false;
+        String content = normalizeContent(dto.getContent());
+        boolean changed = !Objects.equals(poll.getTitle(), dto.getTitle())
+                || !normalizeContent(poll.getContent()).equals(content)
+                || !Objects.equals(poll.getContentImage(), dto.getContentImage());
         List<PollCreateReqDto.TourOption> tourOptions = new ArrayList<>(options.size());
         for (int i = 0; i < options.size(); i++) {
             PollOption option = options.get(i);
-            String content = dto.getOptions().get(i);
+            String optionContent = dto.getOptions().get(i);
             PollCreateReqDto.TourOption tour = dto.getTourOptions() == null
-                    ? existingTourOption(option, content)
+                    ? existingTourOption(option, optionContent)
                     : dto.getTourOptions().get(i);
-            changed |= !option.getContent().equals(content)
+            changed |= !option.getContent().equals(optionContent)
                     || !Objects.equals(option.getTourContentId(), tour == null ? null : tour.contentId())
                     || !Objects.equals(option.getTourImageUrl(), tourImageUrl(tour));
             tourOptions.add(tour);
@@ -301,12 +304,12 @@ public class PollService {
         if (changed && voteRepository.countByPoll_PollId(pollId) > 0) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "참여자가 있는 투표는 선택지를 수정할 수 없습니다."
+                    "참여자가 있는 투표는 마감일시만 수정할 수 있습니다."
             );
         }
 
         poll.setTitle(dto.getTitle());
-        poll.setContent(normalizeContent(dto.getContent()));
+        poll.setContent(content);
         poll.setContentImage(dto.getContentImage());
         poll.setDeadline(dto.getDeadline());
 

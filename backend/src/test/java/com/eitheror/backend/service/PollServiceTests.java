@@ -66,10 +66,27 @@ class PollServiceTests {
         assertEquals("Original", poll.getTitle());
         assertEquals("A", a.getContent());
     }
-    @Test void editingPreservesOptionIdsAndVotes() {
+    @Test void existingVotesAllowOnlyDeadlineChanges() {
         when(votes.countByPoll_PollId(10L)).thenReturn(3L);
-        var result = service.updatePoll(10L, request("A"));
-        assertEquals("Updated", result.getTitle());
+        var dto = request("A");
+        dto.setTitle(poll.getTitle());
+        dto.setContent("Changed");
+        assertEquals(409, assertThrows(ResponseStatusException.class,
+                () -> service.updatePoll(10L, dto)).getStatusCode().value());
+        dto.setContent(poll.getContent());
+        dto.setContentImage("https://example.com/new.jpg");
+        assertEquals(409, assertThrows(ResponseStatusException.class,
+                () -> service.updatePoll(10L, dto)).getStatusCode().value());
+        dto.setContentImage(null);
+        dto.setTitle("Changed title");
+        assertEquals(409, assertThrows(ResponseStatusException.class,
+                () -> service.updatePoll(10L, dto)).getStatusCode().value());
+
+        dto.setTitle(poll.getTitle());
+        dto.setDeadline(poll.getDeadline().plusDays(1));
+        var result = service.updatePoll(10L, dto);
+        assertEquals(dto.getDeadline(), result.getDeadline());
+        assertEquals("Original", result.getTitle());
         assertEquals(20L, result.getOptions().getFirst().getOptionId());
         assertEquals(3L, result.getTotalVotes());
         verify(votes, never()).deleteAllByPollId(any());
