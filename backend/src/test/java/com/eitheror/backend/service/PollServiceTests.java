@@ -78,6 +78,23 @@ class PollServiceTests {
         assertEquals("New A", a.getContent());
         assertEquals(20L, a.getOptionId());
     }
+    @Test void tourImageFollowsTheSelectedOptionAndSurvivesTextOnlyUpdates() {
+        String imageUrl = "https://tong.visitkorea.or.kr/cms/resource/47/4105447_image2_1.jpg";
+        var dto = request("해운대해수욕장");
+        dto.setTourOptions(Arrays.asList(new PollCreateReqDto.TourOption("126081", imageUrl), null));
+
+        var updated = service.updatePoll(10L, dto);
+        assertEquals("126081", updated.getOptions().getFirst().getContentId());
+        assertEquals(imageUrl, updated.getOptions().getFirst().getImageUrl());
+        assertNull(updated.getOptions().getLast().getImageUrl());
+
+        var legacyUpdate = service.updatePoll(10L, request("해운대해수욕장"));
+        assertEquals(imageUrl, legacyUpdate.getOptions().getFirst().getImageUrl());
+
+        service.updatePoll(10L, request("Different option"));
+        assertNull(a.getTourContentId());
+        assertNull(a.getTourImageUrl());
+    }
     @Test void closedPollCanKeepDeadlineButCannotSetAnotherPastDeadline() {
         poll.setDeadline(LocalDateTime.now().minusDays(1));
         service.updatePoll(10L, request("A"));

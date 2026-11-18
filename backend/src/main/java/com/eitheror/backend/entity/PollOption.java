@@ -24,4 +24,9 @@ public class PollOption {
     @Column(nullable = false, length = 255)
     private String content;
 
+    @Column(name = "tour_content_id", length = 32)
+    private String tourContentId;
+
+    @Column(name = "tour_image_url", length = 1000)
+    private String tourImageUrl;
 }

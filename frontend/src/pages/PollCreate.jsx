@@ -6,6 +6,7 @@ import AxiosApi from "../api/AxiosApi";
 import { currentMemberId } from "../api/currentMemberId";
 import { useNavigate, useParams } from "react-router-dom";
 import ImageUpload from "../components/common/ImageUpload.jsx";
+import TourOptionField from "../components/poll/TourOptionField.jsx";
 
 const Container = styled.div`
   box-sizing: border-box;
@@ -107,6 +108,8 @@ const PollCreate = () => {
   const [content, setContent] = useState("");
   const [optionA, setOptionA] = useState("");
   const [optionB, setOptionB] = useState("");
+  const [tourA, setTourA] = useState(null);
+  const [tourB, setTourB] = useState(null);
   const [deadline, setDeadline] = useState("");
   const [contentImage, setContentImage] = useState(null);
   const nav = useNavigate();
@@ -124,6 +127,10 @@ const PollCreate = () => {
       setContent(data.content);
       setOptionA(data.options[0].content);
       setOptionB(data.options[1].content);
+      const toSpot = ({ contentId, content, imageUrl }) =>
+        contentId ? { contentId, title: content, imageUrl } : null;
+      setTourA(toSpot(data.options[0]));
+      setTourB(toSpot(data.options[1]));
       setDeadline(data.deadline);
       setOriginalDeadline(data.deadline);
       setContentImage(data.contentImage);
@@ -162,10 +169,14 @@ const PollCreate = () => {
 
     try {
       setIsSaving(true);
+      const options = [optionA, optionB];
+      const tourOptions = [tourA, tourB].map((spot) =>
+        spot ? { contentId: spot.contentId, imageUrl: spot.imageUrl } : null
+      );
       if (isEdit) {
-        await AxiosApi.pollUpdate(id, { title, content, options: [optionA, optionB], deadline, contentImage });
+        await AxiosApi.pollUpdate(id, { title, content, options, deadline, contentImage, tourOptions });
       } else {
-        await AxiosApi.pollCreate(title, content, [optionA, optionB], deadline, contentImage);
+        await AxiosApi.pollCreate(title, content, options, deadline, contentImage, tourOptions);
       }
       alert(isEdit ? "투표가 수정되었습니다." : "투표가 등록되었습니다.");
       nav(isEdit ? `/votes/${id}` : "/");
@@ -212,25 +223,10 @@ const PollCreate = () => {
         </Field>
 
         <OptionRow>
-          <Field>
-            <span>선택지 A</span>
-            <Input
-              disabled={isEdit && totalVotes > 0}
-              value={optionA}
-              onChange={(e) => setOptionA(e.target.value)}
-              placeholder="첫 번째 선택지"
-            />
-          </Field>
-
-          <Field>
-            <span>선택지 B</span>
-            <Input
-              disabled={isEdit && totalVotes > 0}
-              value={optionB}
-              onChange={(e) => setOptionB(e.target.value)}
-              placeholder="두 번째 선택지"
-            />
-          </Field>
+          <TourOptionField label="선택지 A" value={optionA} onChange={setOptionA} selected={tourA}
+            onSelect={setTourA} disabled={isSaving || (isEdit && totalVotes > 0)} />
+          <TourOptionField label="선택지 B" value={optionB} onChange={setOptionB} selected={tourB}
+            onSelect={setTourB} disabled={isSaving || (isEdit && totalVotes > 0)} />
         </OptionRow>
 
         <Field>

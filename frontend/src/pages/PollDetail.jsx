@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import AxiosApi from "../api/AxiosApi";
 import { currentMemberId } from "../api/currentMemberId";
@@ -107,48 +107,46 @@ const SectionTitle = styled.h3`
   font-weight: 700;
 `;
 
-const OptionLabel = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
+const OptionGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(8px, 3vw, 16px);
   margin-bottom: 12px;
+`;
+
+const OptionImage = styled.img`
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+
+  &[hidden] {
+    display: none;
+  }
+`;
+
+const OptionButton = styled.button`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(8px, 2vw, 16px);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  overflow-wrap: anywhere;
   border: 1px solid ${({ $selected }) => ($selected ? "#373a40" : "#d1d5db")};
   border-radius: 4px;
   background-color: ${({ $selected }) => ($selected ? "#f1f2f4" : "#fafafa")};
   cursor: pointer;
   transition: 0.2s;
 
-  &:hover {
+  &:hover:not(:disabled), &:focus-visible {
     border-color: #888;
   }
 
-  input {
-    accent-color: #373a40;
-  }
-
-  &:has(input:disabled) {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-`;
-
-const VoteButton = styled.button`
-  width: 100%;
-  margin-top: 8px;
-  padding: 14px;
-  background-color: #373a40;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-
   &:disabled {
-    background-color: #e9e9eb;
-    color: #999;
-    cursor: not-allowed;
+    cursor: wait;
   }
 `;
 
@@ -245,21 +243,32 @@ const ResultFill = styled.div`
   transition: width 0.2s ease;
 `;
 
-const ResultLabels = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 12px;
+const ResultCard = styled.div`
+  padding: clamp(8px, 2vw, 16px);
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+`;
 
-  > div {
-    flex: 1;
-    min-width: 0;
-    overflow-wrap: anywhere;
+const ResultOptionButton = styled(ResultCard).attrs({ as: "button", type: "button" })`
+  background-color: ${({ $selected }) => ($selected ? "#f1f2f4" : "#fafafa")};
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled), &:focus-visible {
+    border-color: #373a40;
   }
 
-  > div:last-child {
-    text-align: right;
+  &:disabled {
+    cursor: wait;
   }
+`;
+
+const ResultOptionName = styled.span`
+  display: block;
+  margin: 1em 0;
 `;
 
 const ResultDot = styled.span`
@@ -280,6 +289,19 @@ const PollImage = styled.img`
   border-radius: 14px;
   margin: 28px auto 0;
 `;
+
+function PollOptionImage({ option }) {
+  if (!option.imageUrl) return null;
+  return (
+    <OptionImage
+      src={option.imageUrl}
+      alt=""
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={(event) => { event.currentTarget.hidden = true; }}
+    />
+  );
+}
 
 const PollDetail = () => {
   const { id } = useParams();
@@ -314,8 +336,8 @@ const PollDetail = () => {
   };
 
   const [poll, setPoll] = useState(null);
-  const [selectedOptionId, setSelectedOptionId] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingOptionId, setPendingOptionId] = useState(null);
+  const voteInFlight = useRef(false);
   const [result, setResult] = useState(null);
   const [resultError, setResultError] = useState("");
   const [comments, setComments] = useState([]);
@@ -435,25 +457,25 @@ const PollDetail = () => {
 
   const isClosed = new Date(poll.deadline) <= new Date();
 
-  const handleVote = async () => {
-    if (selectedOptionId === null || isClosed || isSubmitting) {
+  const handleVote = async (optionId) => {
+    if (isClosed || voteInFlight.current) {
       return;
     }
 
+    voteInFlight.current = true;
+    setPendingOptionId(optionId);
     try {
-      setIsSubmitting(true);
-
       if (hasVoted) {
         // 이미 투표한 경우 PUT
-        await AxiosApi.voteUpdate(id, selectedOptionId);
+        await AxiosApi.voteUpdate(id, optionId);
       } else {
         try {
           // 최초 투표 POST
-          await AxiosApi.voteCreate(id, selectedOptionId);
+          await AxiosApi.voteCreate(id, optionId);
         } catch (error) {
           if (error.response?.status === 409) {
             // 이전에 투표한 사용자라면 PUT으로 변경
-            await AxiosApi.voteUpdate(id, selectedOptionId);
+            await AxiosApi.voteUpdate(id, optionId);
           } else {
             throw error;
           }
@@ -463,7 +485,8 @@ const PollDetail = () => {
       setHasVoted(true);
 
       // 투표 성공 후 결과 조회
-      setResult(null);
+      setResultError("");
+      setShowResult(true);
 
       try {
         const response = await AxiosApi.voteResult(id);
@@ -473,8 +496,6 @@ const PollDetail = () => {
         console.error("투표 결과 조회 실패:", error);
         setResultError("투표는 반영됐지만 결과를 불러오지 못했습니다.");
       }
-
-      setShowResult(true);
     } catch (error) {
       console.error("투표 처리 실패:", error);
 
@@ -486,7 +507,8 @@ const PollDetail = () => {
         alert("투표 처리 중 오류가 발생했습니다.");
       }
     } finally {
-      setIsSubmitting(false);
+      voteInFlight.current = false;
+      setPendingOptionId(null);
     }
   };
 
@@ -570,26 +592,40 @@ const PollDetail = () => {
           result ? (
             <>
               <p>총 {result.totalVotes}표</p>
+              {!isClosed && <p>다른 선택지를 누르면 투표가 변경됩니다.</p>}
 
-              <ResultLabels>
+              <OptionGrid>
                 {(poll.options ?? []).map((option, index) => {
                   const optionResult = result.options.find(
                     (item) => item.optionId === option.optionId
                   );
-                  return (
-                    <div key={option.optionId}>
-                      <p>
+                  const card = (
+                    <>
+                      <PollOptionImage option={option} />
+                      <ResultOptionName>
                         <ResultDot $second={index === 1} />
                         {option.content}
-                      </p>
+                      </ResultOptionName>
                       <span>
                         {optionResult?.voteCount ?? 0}표 ·{" "}
                         {(optionResult?.percentage ?? 0).toFixed(1)}%
                       </span>
-                    </div>
+                    </>
+                  );
+                  return isClosed ? (
+                    <ResultCard key={option.optionId}>{card}</ResultCard>
+                  ) : (
+                    <ResultOptionButton
+                      key={option.optionId}
+                      $selected={pendingOptionId === option.optionId}
+                      disabled={pendingOptionId !== null}
+                      onClick={() => handleVote(option.optionId)}
+                    >
+                      {card}
+                    </ResultOptionButton>
                   );
                 })}
-              </ResultLabels>
+              </OptionGrid>
               <ResultBar aria-hidden="true">
                 {(poll.options ?? []).map((option, index) => {
                   const optionResult = result.options.find(
@@ -605,43 +641,30 @@ const PollDetail = () => {
                 })}
               </ResultBar>
 
-              {!isClosed && (
-                <VoteButton
-                  type="button"
-                  style={{ marginTop: "24px" }}
-                  onClick={() => setShowResult(false)}
-                >
-                  선택 변경하기
-                </VoteButton>
-              )}
+              {pendingOptionId !== null && <Notice role="status">투표 처리 중…</Notice>}
+              {resultError && pendingOptionId === null && <Notice role="status">{resultError}</Notice>}
             </>
           ) : (
             <Notice>{resultError || "투표 결과를 불러오는 중..."}</Notice>
           )
         ) : (
           <>
-            {(poll.options ?? []).map((option) => (
-              <OptionLabel
-                key={option.optionId}
-                $selected={selectedOptionId === option.optionId}
-              >
-                <input
-                  type="radio"
-                  name="pollOption"
-                  value={option.optionId}
-                  checked={selectedOptionId === option.optionId}
-                  onChange={() => setSelectedOptionId(option.optionId)}
-                />
-                {option.content}
-              </OptionLabel>
-            ))}
+            <OptionGrid>
+              {(poll.options ?? []).map((option) => (
+                <OptionButton
+                  key={option.optionId}
+                  type="button"
+                  $selected={pendingOptionId === option.optionId}
+                  disabled={pendingOptionId !== null}
+                  onClick={() => handleVote(option.optionId)}
+                >
+                  <PollOptionImage option={option} />
+                  <span>{option.content}</span>
+                </OptionButton>
+              ))}
+            </OptionGrid>
 
-            <VoteButton
-              disabled={selectedOptionId === null || isSubmitting}
-              onClick={handleVote}
-            >
-              {isSubmitting ? "처리 중..." : "투표하기"}
-            </VoteButton>
+            {pendingOptionId !== null && <Notice role="status">투표 처리 중…</Notice>}
           </>
         )}
       </VoteSection>

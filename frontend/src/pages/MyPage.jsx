@@ -295,7 +295,10 @@ const MyPage = () => {
 
                       <ItemDate>작성일: {formatDate(poll.regDate)}</ItemDate>
 
-                      <ItemDate>투표 참여자: {poll.totalVotes ?? 0}명</ItemDate>
+                      <ItemDate>
+                        {" "}
+                        투표 참여자: {poll.totalVotes ?? 0}명
+                      </ItemDate>
                     </ItemCard>
                   ))}
                 </ItemList>

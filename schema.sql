@@ -2,15 +2,8 @@
 -- ============================================================
 -- Either Or (양자택일) Database Schema
 -- MySQL 8.x
--- 신규 개발 환경의 데이터베이스 초기 생성용
+-- MySQL 테이블 정의 및 ERD 가져오기용
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS either_or
-    DEFAULT CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-USE either_or;
-
 
 -- ============================================================
 -- 1. 회원 (member)
@@ -54,6 +47,8 @@ CREATE TABLE poll_options (
     option_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     poll_id BIGINT NOT NULL,
     content VARCHAR(255) NOT NULL,
+    tour_content_id VARCHAR(32),
+    tour_image_url VARCHAR(1000),
 
     FOREIGN KEY (poll_id)
         REFERENCES polls(poll_id)
@@ -136,9 +131,3 @@ CREATE TABLE social_account (
     FOREIGN KEY (member_id)
         REFERENCES member(member_id)
 );
-
-select * from social_account
-
-SELECT member_id, email, pwd, profile_image_id, authority
-FROM member
-WHERE member_id = 72;
