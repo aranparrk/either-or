@@ -17,6 +17,8 @@ public interface PollOptionRepository extends JpaRepository<PollOption, Long> {
 
     List<PollOption> findByPoll_PollId(Long pollId);
 
+    List<PollOption> findByPoll_PollIdInOrderByOptionIdAsc(List<Long> pollIds);
+
     // 회원 탈퇴시 회원이 작성한 게시글의 모든 선택지 삭제
     @Modifying
     @Query("""

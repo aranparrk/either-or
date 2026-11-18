@@ -22,8 +22,10 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -45,10 +47,25 @@ public class PollService {
                 Sort.by(Sort.Direction.DESC, "regDate")
         );
 
+        if (polls.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> pollIds = polls.stream().map(Poll::getPollId).toList();
+        Map<Long, List<PollOptionResDto>> optionsByPollId =
+                pollOptionRepository.findByPoll_PollIdInOrderByOptionIdAsc(pollIds)
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                option -> option.getPoll().getPollId(),
+                                Collectors.mapping(PollService::toOptionDto, Collectors.toList())
+                        ));
+
         List<PollListResDto> pollListResDtos = new ArrayList<>();
 
         for (Poll poll : polls) {
-            pollListResDtos.add(toDto(poll));
+            PollListResDto dto = toDto(poll);
+            dto.setOptions(optionsByPollId.getOrDefault(poll.getPollId(), List.of()));
+            pollListResDtos.add(dto);
         }
 
         return pollListResDtos;

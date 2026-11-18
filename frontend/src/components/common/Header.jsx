@@ -7,29 +7,37 @@ import AxiosApi from "../../api/AxiosApi.jsx";
 const HeaderContainer = styled.header`
   width: 100%;
   height: 68px;
-  background-color: #f3f7f4;
+  background-color: #fff;
   border-bottom: 1px solid #dce7e1;
 `;
 
 const HeaderInner = styled.div`
-  max-width: 1200px;
+  max-width: 1500px;
   height: 100%;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 clamp(24px, 3vw, 44px);
 
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 
-  @media (max-width: 560px) {
-    padding-inline: 14px;
+  @media (max-width: 768px) {
+    padding-inline: 16px;
   }
 `;
 
-const LeftMenu = styled.nav`
+const Brand = styled.div`
   display: flex;
+  min-width: 0;
   align-items: center;
-  gap: clamp(12px, 3vw, 40px);
+  gap: 14px;
+
+  @media (max-width: 560px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
 `;
 
 const Logo = styled(Link)`
@@ -59,10 +67,27 @@ const MenuLink = styled(Link)`
   }
 `;
 
+const Tagline = styled.span`
+  border-left: 1px solid #a1afa9;
+  padding-left: 14px;
+  color: #34423d;
+  font-size: 13px;
+  white-space: nowrap;
+
+  @media (max-width: 560px) {
+    border-left: 0;
+    padding-left: 0;
+    font-size: 11px;
+    white-space: normal;
+    word-break: keep-all;
+  }
+`;
+
 const RightMenu = styled.nav`
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 12px;
+  gap: clamp(8px, 2vw, 16px);
 `;
 
 const LogoutButton = styled.button`
@@ -71,6 +96,7 @@ const LogoutButton = styled.button`
   padding: 0;
   font-size: 14px;
   color: #333;
+  white-space: nowrap;
   cursor: pointer;
 
   &:hover {
@@ -142,12 +168,15 @@ const Header = () => {
   return (
     <HeaderContainer>
       <HeaderInner>
-        <LeftMenu>
-          <Logo to="/"><img src="/favicon.svg" alt="" />양자택일</Logo>
-          <MenuLink to="/">투표 목록</MenuLink>
-        </LeftMenu>
+        <Brand>
+          <Logo to="/">
+            <img src="/favicon.svg" alt="" />
+            양자택일
+          </Logo>
+          <Tagline>여행, 고민된다면? 선택은 양자택일!</Tagline>
+        </Brand>
 
-        <RightMenu>
+        <RightMenu aria-label="계정">
           {isLogin ? (
             <>
               <ProfileIcon
@@ -155,7 +184,6 @@ const Header = () => {
                 imageUrl={imageUrl}
               />
               <MenuLink to="/mypage">마이페이지</MenuLink>
-              <span>|</span>
               <LogoutButton type="button" onClick={onLogout}>
                 로그아웃
               </LogoutButton>
@@ -163,7 +191,6 @@ const Header = () => {
           ) : (
             <>
               <MenuLink to="/login">로그인</MenuLink>
-              <span>|</span>
               <MenuLink to="/signup">회원가입</MenuLink>
             </>
           )}
