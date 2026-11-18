@@ -10,6 +10,7 @@ public class LoginResponseDto {
     private long memberId;
     private String email;
     private Integer profileId;
+    private String imageUrl;
 
     private String grantType;
     private String accessToken;

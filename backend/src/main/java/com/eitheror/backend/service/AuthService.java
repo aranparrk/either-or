@@ -124,6 +124,7 @@ public class AuthService {
                 member.getMemberId(),
                 member.getEmail(),
                 member.getProfileId(),
+                member.getImageUrl(),
                 tokenDto.grantType(),
                 tokenDto.accessToken(),
                 tokenDto.accessTokenExpiresIn(),
