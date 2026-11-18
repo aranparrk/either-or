@@ -15,5 +15,12 @@ export const saveLogin = (data) => {
 
   localStorage.setItem("profileId", String(data.profileId));
 
+  // 프로필 이미지로 변경시 이미지 주소 저장
+  if (data.imageUrl) {
+    localStorage.setItem("imageUrl", data.imageUrl);
+  } else {
+    localStorage.removeItem("imageUrl");
+  }
+
   window.dispatchEvent(new Event("authChanged"));
 };
