@@ -45,6 +45,33 @@ class PollServiceTests {
         dto.setOptions(List.of(first, "B")); dto.setDeadline(poll.getDeadline());
         return dto;
     }
+    @Test void publicListIncludesOrderedOptionsAndAllowsMissingImages() {
+        String imageUrl = "https://example.com/option-a.jpg";
+        a.setPoll(poll);
+        a.setTourImageUrl(imageUrl);
+        b.setPoll(poll);
+        Poll otherPoll = new Poll();
+        otherPoll.setPollId(11L);
+        PollOption otherOption = new PollOption();
+        otherOption.setOptionId(22L);
+        otherOption.setContent("Other option");
+        otherOption.setPoll(otherPoll);
+
+        when(polls.findAll(any(org.springframework.data.domain.Sort.class)))
+                .thenReturn(List.of(otherPoll, poll));
+        when(options.findByPoll_PollIdInOrderByOptionIdAsc(List.of(11L, 10L)))
+                .thenReturn(List.of(a, b, otherOption));
+
+        var list = service.getPollList();
+        assertEquals("Other option", list.getFirst().getOptions().getFirst().getContent());
+        var pair = list.get(1).getOptions();
+        assertEquals(2, pair.size());
+        assertEquals("A", pair.getFirst().getContent());
+        assertEquals(imageUrl, pair.getFirst().getImageUrl());
+        assertEquals("B", pair.getLast().getContent());
+        assertNull(pair.getLast().getImageUrl());
+    }
+
     @Test void nonAuthorCannotUpdateOrDelete() {
         poll.getMember().setMemberId(2L);
         assertEquals(403, assertThrows(ResponseStatusException.class,

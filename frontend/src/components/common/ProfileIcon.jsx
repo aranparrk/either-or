@@ -14,8 +14,10 @@ const profileImages = {
 }
 
 const ProfileStyled = styled.img`
-  width: 50px;
-  height: 50px;
+  box-sizing: border-box;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid #d0d0d0;

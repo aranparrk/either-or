@@ -8,15 +8,116 @@ import PollItem from "../components/poll/PollItem";
 // 페이지 전체 영역
 const PageContainer = styled.div`
   width: 100%;
-  max-width: 1100px;
+  max-width: 1500px;
   margin: 0 auto;
-  padding: 48px 24px 80px;
+  padding: 32px clamp(24px, 3vw, 44px) 80px;
   box-sizing: border-box;
   text-align: left;
 
   @media (max-width: 768px) {
     padding: 32px 16px 48px;
   }
+`;
+
+const PageGrid = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 2.3fr) minmax(270px, 1fr);
+  grid-template-areas:
+    "cover sidebar"
+    "polls sidebar";
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 20px 24px;
+
+  @media (max-width: 1000px) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "cover" "search" "polls" "ranking" "assistant";
+  }
+`;
+
+const CoverArea = styled.div`
+  grid-area: cover;
+`;
+
+const PollArea = styled.section`
+  grid-area: polls;
+  min-width: 0;
+`;
+
+const Sidebar = styled.aside`
+  grid-area: sidebar;
+  display: grid;
+  gap: 20px;
+
+  @media (max-width: 1000px) {
+    display: contents;
+  }
+`;
+
+const SidebarPanel = styled.section`
+  padding: clamp(16px, 2.2vw, 26px);
+  border: 1px solid #e0ede7;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f1f8f5, #e6f3ed);
+`;
+
+const SearchPanel = styled(SidebarPanel)`
+  @media (max-width: 1000px) {
+    grid-area: search;
+  }
+`;
+
+const RankingPanel = styled(SidebarPanel)`
+  @media (max-width: 1000px) {
+    grid-area: ranking;
+  }
+  border-color: #e5eae7;
+  background: #fff;
+  box-shadow: 0 2px 5px rgb(20 43 34 / 7%);
+`;
+
+const AssistantPanel = styled(SidebarPanel)`
+  @media (max-width: 1000px) {
+    grid-area: assistant;
+  }
+`;
+
+const PanelTitle = styled.h2`
+  margin: 0;
+  color: #173c35;
+  font-size: 20px;
+  line-height: 1.3;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  min-width: 0;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border: 1px solid #cdded5;
+  border-radius: 999px;
+  background: #fff;
+  color: #173c35;
+  font: inherit;
+  font-size: 14px;
+
+  &:focus-visible {
+    outline: 2px solid #205c50;
+    outline-offset: 2px;
+  }
+`;
+
+const PanelMessage = styled.p`
+  margin: 10px 0 0;
+  color: #475e54;
+  font-size: 14px;
+  line-height: 1.5;
+`;
+
+const SearchMessage = styled.p`
+  margin: 24px 0;
+  color: #535d57;
+  text-align: center;
 `;
 
 const CreatePollLink = styled(Link)`
@@ -52,7 +153,7 @@ const FilterBar = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin: 24px 0;
+  margin: 0 0 16px;
   flex-wrap: wrap;
 `;
 
@@ -88,6 +189,7 @@ const PollList = () => {
   const [polls, setPolls] = useState([]);
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("latest");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     AxiosApi.pollList()
@@ -99,8 +201,15 @@ const PollList = () => {
       });
   }, []);
 
+  const keyword = search.trim().toLowerCase();
   const filteredPolls = polls
     .filter((poll) => {
+      const matchesSearch = !keyword
+        || poll.title?.toLowerCase().includes(keyword)
+        || poll.options?.some((option) => option.content?.toLowerCase().includes(keyword));
+
+      if (!matchesSearch) return false;
+
       const isClosed = new Date(poll.deadline) <= new Date();
 
       if (filter === "ongoing") {
@@ -123,49 +232,81 @@ const PollList = () => {
 
   return (
     <PageContainer>
-      <TravelCover
-        wide
-        title="다음 여행지는 어디로 갈까요?"
-        description="두 여행지를 비교하고, 가고 싶은 곳에 한 표를 남겨보세요."
-      >
-        <CreatePollLink to="/votes/new">여행지 투표 만들기</CreatePollLink>
-      </TravelCover>
-
-      <FilterBar>
-        <FilterGroup>
-          <FilterButton
-            $active={filter === "all"}
-            onClick={() => setFilter("all")}
+      <PageGrid>
+        <CoverArea>
+          <TravelCover
+            wide
+            title="다음 여행지는 어디로 갈까요?"
+            description="두 여행지를 비교하고, 가고 싶은 곳에 한 표를 남겨보세요."
           >
-            전체
-          </FilterButton>
+            <CreatePollLink to="/votes/new">여행지 투표 만들기</CreatePollLink>
+          </TravelCover>
+        </CoverArea>
 
-          <FilterButton
-            $active={filter === "ongoing"}
-            onClick={() => setFilter("ongoing")}
-          >
-            진행 중
-          </FilterButton>
+        <Sidebar aria-label="투표 도구">
+          <SearchPanel aria-labelledby="poll-search-title">
+            <PanelTitle id="poll-search-title">투표 검색</PanelTitle>
+            <SearchInput
+              type="search"
+              aria-label="투표 제목 또는 선택지 이름 검색"
+              placeholder="투표 제목 또는 선택지 이름"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </SearchPanel>
 
-          <FilterButton
-            $active={filter === "closed"}
-            onClick={() => setFilter("closed")}
-          >
-            마감
-          </FilterButton>
-        </FilterGroup>
+          <RankingPanel aria-labelledby="weekly-ranking-title">
+            <PanelTitle id="weekly-ranking-title">주간랭킹</PanelTitle>
+            <PanelMessage>주간 인기 투표 집계를 준비 중이에요.</PanelMessage>
+          </RankingPanel>
 
-        <SortSelect value={sort} onChange={(e) => setSort(e.target.value)}>
-          <option value="latest">최신순</option>
-          <option value="popular">인기순</option>
-        </SortSelect>
-      </FilterBar>
+          <AssistantPanel aria-labelledby="travel-assistant-title">
+            <PanelTitle id="travel-assistant-title">AI 여행 도우미</PanelTitle>
+            <PanelMessage>여행지 추천과 일정 안내를 준비 중이에요.</PanelMessage>
+          </AssistantPanel>
+        </Sidebar>
 
-      <PollGrid>
-        {filteredPolls.map((poll) => (
-          <PollItem key={poll.pollId} poll={poll} />
-        ))}
-      </PollGrid>
+        <PollArea aria-label="투표 목록">
+          <FilterBar>
+            <FilterGroup>
+              <FilterButton
+                $active={filter === "all"}
+                onClick={() => setFilter("all")}
+              >
+                전체
+              </FilterButton>
+
+              <FilterButton
+                $active={filter === "ongoing"}
+                onClick={() => setFilter("ongoing")}
+              >
+                진행 중
+              </FilterButton>
+
+              <FilterButton
+                $active={filter === "closed"}
+                onClick={() => setFilter("closed")}
+              >
+                마감
+              </FilterButton>
+            </FilterGroup>
+
+            <SortSelect value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="latest">최신순</option>
+              <option value="popular">인기순</option>
+            </SortSelect>
+          </FilterBar>
+
+          <PollGrid>
+            {filteredPolls.map((poll) => (
+              <PollItem key={poll.pollId} poll={poll} />
+            ))}
+          </PollGrid>
+          {keyword && filteredPolls.length === 0 && (
+            <SearchMessage role="status">검색 결과가 없습니다.</SearchMessage>
+          )}
+        </PollArea>
+      </PageGrid>
     </PageContainer>
   );
 };
