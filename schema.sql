@@ -134,3 +134,25 @@ CREATE TABLE social_account (
     FOREIGN KEY (member_id)
         REFERENCES member(member_id)
 );
+
+-- ============================================================
+-- 8. 즐겨찾기 (favorites)
+-- 
+-- ============================================================
+CREATE TABLE favorites (
+    favorite_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    member_id BIGINT NOT NULL,
+    poll_id BIGINT NOT NULL,
+    reg_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_favorite_member
+        FOREIGN KEY (member_id)
+        REFERENCES member(member_id),
+
+    CONSTRAINT fk_favorite_poll
+        FOREIGN KEY (poll_id)
+        REFERENCES polls(poll_id),
+
+    CONSTRAINT uk_member_poll
+        UNIQUE (member_id, poll_id)
+); 

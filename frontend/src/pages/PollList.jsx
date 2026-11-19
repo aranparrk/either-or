@@ -303,8 +303,20 @@ const SortSelect = styled.select`
   cursor: pointer;
 `;
 
+const seoulDate = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" });
+
+function pollRegistrationDate(regDate) {
+  if (!regDate) return null;
+  // Java LocalDateTime 응답은 한국 시간 기준이며 시간대 표기가 없다.
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/i.test(regDate)) return regDate.slice(0, 10);
+
+  const date = new Date(regDate);
+  return Number.isNaN(date.getTime()) ? null : seoulDate.format(date);
+}
+
 const PollList = () => {
   const [polls, setPolls] = useState([]);
+  const [today, setToday] = useState(() => seoulDate.format(new Date()));
   const [ranking, setRanking] = useState(null);
   const [rankingError, setRankingError] = useState(false);
   const [destinations, setDestinations] = useState(null);
@@ -315,6 +327,15 @@ const PollList = () => {
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("latest");
   const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const nextMidnight = Date.parse(`${today}T00:00:00+09:00`) + 24 * 60 * 60 * 1000;
+    const timer = window.setTimeout(() => {
+      setToday(seoulDate.format(new Date()));
+    }, Math.max(0, nextMidnight - Date.now()));
+
+    return () => window.clearTimeout(timer);
+  }, [today]);
 
   useEffect(() => {
     AxiosApi.pollList()
@@ -513,7 +534,11 @@ const PollList = () => {
 
           <PollGrid>
             {filteredPolls.map((poll) => (
-              <PollItem key={poll.pollId} poll={poll} />
+              <PollItem
+                key={poll.pollId}
+                poll={poll}
+                isNew={pollRegistrationDate(poll.regDate) === today}
+              />
             ))}
           </PollGrid>
           {keyword && filteredPolls.length === 0 && (

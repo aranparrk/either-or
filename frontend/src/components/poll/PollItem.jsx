@@ -99,8 +99,23 @@ const OptionLetter = styled.span`
   color: ({ $second }) => ($second ? "#bd4e3d" : "#086646");
 `;
 
+const PollTitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+`;
+
+const NewLabel = styled.span`
+  flex: none;
+  color: #b42318;
+  font-size: 11px;
+  font-weight: 700;
+`;
+
 // 투표 제목
 const PollTitle = styled.h3`
+  min-width: 0;
   margin: 0;
   font-size: clamp(17px, 2.2vw, 20px);
   font-weight: 700;
@@ -144,7 +159,7 @@ const VoteCount = styled.span`
 `;
 
 // 투표 카드 하나를 출력하는 컴포넌트
-const PollItem = ({ poll }) => {
+const PollItem = ({ poll, isNew }) => {
   const isClosed = new Date(poll.deadline) <= new Date();
 
   return (
@@ -158,7 +173,10 @@ const PollItem = ({ poll }) => {
       </CardHeader>
 
       <PollInfo>
-        <PollTitle title={poll.title}>{poll.title}</PollTitle>
+        <PollTitleRow>
+          <PollTitle title={poll.title}>{poll.title}</PollTitle>
+          {isNew && <NewLabel>NEW</NewLabel>}
+        </PollTitleRow>
 
         <OptionGrid>
           {["A", "B"].map((label, index) => {
