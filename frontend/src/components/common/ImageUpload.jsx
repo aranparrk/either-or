@@ -3,7 +3,7 @@ import styled from "styled-components";
 import Button from "./Button.jsx";
 import FormFeedback from "./FormFeedback.jsx";
 import CancelButton from "./CancelButton.jsx"
-import { uploadImage } from "../../api/imgBB.jsx";
+import AxiosApi from "../../api/AxiosApi.jsx";
 
 
 const Container = styled.div`
@@ -67,10 +67,15 @@ const ImageUpload = ({ onImageSelect }) => {
     try { // 이미지 등록이 성공할때
       setUploading(true);
       setUploadError("");
-      // ImgBB에 이미지 업로드
-      const UploadedImageUrl = await uploadImage(imageFile)
+
+      // 백엔드로 이미지 업로드
+      const response = await AxiosApi.uploadImage(imageFile);
+
+      // 백엔드에서 받은 이미지 주소
+      const uploadUrl = response.data.imageUrl;
+
       // 업로드된 이미지 주소를 부모 컴포넌트에 전달
-      onImageSelect?.(UploadedImageUrl)
+      onImageSelect?.(uploadUrl)
 
       setUploaded(true);
 

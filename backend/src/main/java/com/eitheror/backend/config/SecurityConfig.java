@@ -121,6 +121,7 @@ public class SecurityConfig {
                                 "/api/votes",
                                 "/api/votes/**",
                                 "/api/auth/**",
+                                "/api/image/**",
                                 "/ws",
                                 "/error"
                         ).permitAll()
