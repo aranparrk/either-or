@@ -159,6 +159,8 @@ const AxiosApi = {
     return await api.get("/api/votes");
   },
 
+  weeklyRanking: (signal) => api.get("/api/votes/weekly-ranking", { signal }),
+
   searchTourSpots: (keyword) => api.get("/api/tour-spots", { params: { keyword } }),
 
   // 투표 상세 조회

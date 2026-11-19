@@ -44,7 +44,7 @@ const StyledButton = styled.button`
   }
 `;
 
-const GoogleButton = ({ onClick, disabled = false }) => (
+const GoogleButton = ({ onClick, disabled = false, children }) => (
   <StyledButton type="button" onClick={onClick} disabled={disabled}>
     <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
       <path fill="#4285F4" d="M43.61 24.46c0-1.36-.12-2.66-.35-3.92H24v7.42h11a9.4 9.4 0 0 1-4.08 6.18v5.14h6.61c3.87-3.56 6.08-8.8 6.08-14.82Z" />
@@ -52,7 +52,7 @@ const GoogleButton = ({ onClick, disabled = false }) => (
       <path fill="#FBBC05" d="M12.56 27.42A12 12 0 0 1 11.93 24c0-1.19.22-2.34.63-3.42v-5.3H5.73A20 20 0 0 0 4 24c0 3.23.77 6.28 2.13 8.98l6.43-5.56Z" />
       <path fill="#EA4335" d="M24 12.14c3 0 5.69 1.03 7.81 3.05l5.86-5.86C34.1 6.1 29.5 4 24 4A20 20 0 0 0 5.73 15.28l6.83 5.3C14.17 15.74 18.68 12.14 24 12.14Z" />
     </svg>
-    Google로 계속하기
+    {children}
   </StyledButton>
 );
 

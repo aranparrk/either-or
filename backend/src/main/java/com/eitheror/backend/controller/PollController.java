@@ -1,9 +1,6 @@
 package com.eitheror.backend.controller;
 
-import com.eitheror.backend.dto.PollCreateReqDto;
-import com.eitheror.backend.dto.PollCreateResDto;
-import com.eitheror.backend.dto.PollDetailResDto;
-import com.eitheror.backend.dto.PollListResDto;
+import com.eitheror.backend.dto.*;
 import com.eitheror.backend.service.PollService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,5 +56,11 @@ public class PollController {
         return ResponseEntity.ok(
                 pollService.createPoll(dto)
         );
+    }
+
+    @Operation(summary = "주간 랭킹", description = "주간 랭킹을 조회합니다.")
+    @GetMapping("/weekly-ranking")
+    public ResponseEntity<List<WeeklyRankingResDto>> getWeeklyRanking() {
+        return ResponseEntity.ok(pollService.getWeeklyRanking());
     }
 }

@@ -146,7 +146,9 @@ const Login = () => {
         <KakaoButton disabled={isSubmitting} onClick={kakaoLogin}>
           카카오로 로그인
         </KakaoButton>
-        <GoogleButton disabled={isSubmitting} onClick={googleLogin} />
+        <GoogleButton disabled={isSubmitting} onClick={googleLogin}>
+          구글로 로그인
+        </GoogleButton>
         <SignUpLink to="/signup">회원가입으로 이동</SignUpLink>
       </Form2>
     </TravelAuthLayout>

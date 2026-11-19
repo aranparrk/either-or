@@ -44,7 +44,7 @@ const StyledButton = styled.button`
   }
 `;
 
-const KakaoButton = ({ onClick, disabled = false, children = "카카오로 계속하기" }) => (
+const KakaoButton = ({ onClick, disabled = false, children }) => (
   <StyledButton type="button" onClick={onClick} disabled={disabled}>
     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
       <path

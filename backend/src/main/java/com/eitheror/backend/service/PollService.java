@@ -12,6 +12,8 @@ import com.eitheror.backend.repository.VoteRepository;
 import com.eitheror.backend.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -349,6 +355,33 @@ public class PollService {
         pollOptionRepository.deleteAllByPollId(pollId);
 
         pollRepository.delete(poll);
+    }
+
+    // 주간 랭킹
+    public List<WeeklyRankingResDto> getWeeklyRanking() {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        LocalDate sunday = today.with(
+                TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)
+        );
+
+        LocalDateTime start = sunday.atStartOfDay();
+        LocalDateTime end = sunday.plusWeeks(1).atStartOfDay();
+
+        var rows = voteRepository.findWeeklyRanking(start, end, PageRequest.of(0, 5));
+
+        List<WeeklyRankingResDto> ranking = new ArrayList<>();
+
+        for (VoteRepository.WeeklyRankingRow row : rows) {
+            pollRepository.findById(row.getPollId()).ifPresent(poll -> {
+                ranking.add(new WeeklyRankingResDto(
+                        row.getPollId(),
+                        poll.getTitle(),
+                        row.getVoteCount()
+                ));
+            });
+        }
+
+        return ranking;
     }
 
     // 목록 조회 DTO 변환
