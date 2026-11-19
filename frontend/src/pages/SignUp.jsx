@@ -260,10 +260,12 @@ const SignUp = () => {
         ) : (
           <>
             <KakaoButton onClick={kakaoSignUp}>
-              카카오로 가입하기
+              카카오로 회원가입
             </KakaoButton>
 
-            <GoogleButton onClick={googleSignUp} />
+            <GoogleButton onClick={googleSignUp}>
+              구글로 회원가입
+            </GoogleButton>
 
             <AuthDivider />
 

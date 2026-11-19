@@ -121,6 +121,63 @@ const PanelMessage = styled.p`
   line-height: 1.5;
 `;
 
+const RANK_MEDALS = ["🥇", "🥈", "🥉"];
+
+const RankingList = styled.ol`
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+`;
+
+const RankingItem = styled.li`
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+`;
+
+const RankMarker = styled.span`
+  color: #205c50;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+`;
+
+const RankingLink = styled(Link)`
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: #173c35;
+  font-size: 16px;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #205c50;
+    outline-offset: 3px;
+  }
+`;
+
+const RankingTitle = styled.span`
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const RankingVoteCount = styled.span`
+  flex-shrink: 0;
+  color: #475e54;
+  font-size: 14px;
+  white-space: nowrap;
+`;
+
 const SearchMessage = styled.p`
   margin: 24px 0;
   color: #535d57;
@@ -182,8 +239,28 @@ const FilterButton = styled.button`
 `;
 
 // 정렬 선택
+const SortControl = styled.div`
+  position: relative;
+  display: inline-flex;
+  color: #444;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+`;
+
 const SortSelect = styled.select`
-  padding: 10px 12px;
+  appearance: none;
+  padding: 10px 34px 10px 12px;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
   background-color: #fff;
@@ -194,6 +271,8 @@ const SortSelect = styled.select`
 
 const PollList = () => {
   const [polls, setPolls] = useState([]);
+  const [ranking, setRanking] = useState(null);
+  const [rankingError, setRankingError] = useState(false);
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("latest");
   const [search, setSearch] = useState("");
@@ -206,6 +285,20 @@ const PollList = () => {
       .catch((error) => {
         console.error("투표 목록 조회 실패 : ", error);
       });
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    AxiosApi.weeklyRanking(controller.signal)
+      .then((response) => {
+        if (!controller.signal.aborted) setRanking(response.data);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setRankingError(true);
+      });
+
+    return () => controller.abort();
   }, []);
 
   const keyword = search.trim().toLowerCase();
@@ -264,7 +357,27 @@ const PollList = () => {
 
           <RankingPanel aria-labelledby="weekly-ranking-title">
             <PanelTitle id="weekly-ranking-title">주간랭킹</PanelTitle>
-            <PanelMessage>주간 인기 투표 집계를 준비 중이에요.</PanelMessage>
+            {rankingError ? (
+              <PanelMessage role="status">주간랭킹을 불러오지 못했어요.</PanelMessage>
+            ) : ranking === null ? (
+              <PanelMessage role="status">주간랭킹을 불러오는 중이에요.</PanelMessage>
+            ) : ranking.length === 0 ? (
+              <PanelMessage role="status">아직 이번 주에 집계된 표가 없어요.</PanelMessage>
+            ) : (
+              <RankingList role="list">
+                {ranking.map(({ pollId, title, voteCount }, index) => (
+                  <RankingItem key={pollId}>
+                    <RankMarker role="img" aria-label={`${index + 1}위`}>
+                      {RANK_MEDALS[index] ?? index + 1}
+                    </RankMarker>
+                    <RankingLink to={`/votes/${pollId}`}>
+                      <RankingTitle title={title}>{title}</RankingTitle>
+                      <RankingVoteCount>{voteCount.toLocaleString("ko-KR")}표</RankingVoteCount>
+                    </RankingLink>
+                  </RankingItem>
+                ))}
+              </RankingList>
+            )}
           </RankingPanel>
 
           <AssistantPanel aria-labelledby="travel-assistant-title">
@@ -298,10 +411,16 @@ const PollList = () => {
               </FilterButton>
             </FilterGroup>
 
-            <SortSelect value={sort} onChange={(e) => setSort(e.target.value)}>
-              <option value="latest">최신순</option>
-              <option value="popular">인기순</option>
-            </SortSelect>
+            <SortControl>
+              <SortSelect
+                aria-label="투표 정렬"
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+              >
+                <option value="latest">최신순</option>
+                <option value="popular">인기순</option>
+              </SortSelect>
+            </SortControl>
           </FilterBar>
 
           <PollGrid>
