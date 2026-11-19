@@ -19,7 +19,7 @@ import AxiosApi from "../../api/AxiosApi.jsx";
   ];
 
 const ProfileSection = styled.div`
-  margin-bottom: 100px;
+  margin-bottom: 36px;
 `;
 
 const PreviewArea = styled.div`

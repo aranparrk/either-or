@@ -8,6 +8,8 @@ import com.eitheror.backend.dto.SocialSignUpRequestDto;
 import com.eitheror.backend.entity.Member;
 import com.eitheror.backend.service.AuthService;
 import com.eitheror.backend.service.SocialAuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 
+@Tag(name = "소셜 로그인 API", description = "소셜 로그인")
 @RestController
 @RequestMapping("/api/auth/social")
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class SocialAuthController {
     private final AuthService authService;
 
     // 소셜 회원가입 완료
+    @Operation(summary = "소셜 회원가입", description = "소셜로 회원가입 합니다")
     @PostMapping("/signup")
     public LoginResponseDto signUp(
             @RequestBody SocialSignUpRequestDto dto,
@@ -69,7 +73,8 @@ public class SocialAuthController {
         Member member = socialAuthService.signUpSocial(
                 pending.provider(),
                 pending.providerId(),
-                dto.profileId()
+                dto.profileId(),
+                dto.nickname()
         );
 
         // 5. 기존 JWT 발급 로직 재사용
@@ -86,6 +91,7 @@ public class SocialAuthController {
     }
 
     // 일회용 로그인 코드 → JWT 교환
+    @Operation(summary = "소셜 로그인", description = "소셜로 로그인 합니다")
     @PostMapping("/login")
     public LoginResponseDto login(
             @RequestBody SocialLoginRequest dto,

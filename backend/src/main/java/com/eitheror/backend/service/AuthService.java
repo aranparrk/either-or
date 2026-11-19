@@ -72,7 +72,7 @@ public class AuthService {
         member.setPwd(pwdEncoder.encode(dto.getPwd()));
 
         // 전체 회원 정보 DB에 저장
-        memberRepository.save(member);
+        Nicknames.saveMember(memberRepository, member);
 
         return true;
     }
@@ -264,6 +264,7 @@ public class AuthService {
         Member member = new Member();
 
         member.setEmail(email);
+        member.setNickname(Nicknames.requireValid(dto.getNickname()));
         member.setProfileId(dto.getProfileId());
         member.setAuthority(Authority.ROLE_USER);
         // 비밀번호는 signUp()에서 암호화한 후 별도로 설정

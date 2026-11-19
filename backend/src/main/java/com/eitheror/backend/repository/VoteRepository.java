@@ -2,12 +2,15 @@
 package com.eitheror.backend.repository;
 
 import com.eitheror.backend.entity.Vote;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -42,4 +45,41 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     void deleteAllByMemberIdForWithdrawal(
             @Param("memberId") Long memberId
     );
+
+    @Query("""
+    SELECT v.poll.pollId AS pollId, COUNT(v) AS voteCount
+    FROM Vote v
+    WHERE v.regDate >= :start AND v.regDate < :end
+    GROUP BY v.poll.pollId
+    ORDER BY COUNT(v) DESC, v.poll.pollId ASC
+    """)
+    List<WeeklyRankingRow> findWeeklyRanking(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            Pageable pageable
+    );
+
+    interface WeeklyRankingRow {
+        Long getPollId();
+        Long getVoteCount();
+    }
+
+    @Query("""
+        SELECT MIN(o.optionId) AS optionId, COUNT(v) AS voteCount
+        FROM Vote v JOIN v.pollOption o
+        WHERE v.regDate >= :start AND v.regDate < :end
+          AND o.tourContentId IS NOT NULL AND o.tourContentId <> ''
+        GROUP BY o.tourContentId
+        ORDER BY COUNT(v) DESC, o.tourContentId ASC
+        """)
+    List<WeeklyDestinationRow> findWeeklyDestinations(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            Pageable pageable
+    );
+
+    interface WeeklyDestinationRow {
+        Long getOptionId();
+        Long getVoteCount();
+    }
 }

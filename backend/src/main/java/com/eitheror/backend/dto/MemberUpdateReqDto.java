@@ -12,5 +12,6 @@ public class MemberUpdateReqDto {
     private String currentPwd; // 기존 비밀번로
     private String newPwd;     // 새 비밀번호
     private String imageUrl;
+    private String nickname;
     private Integer profileId;
 }

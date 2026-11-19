@@ -10,7 +10,9 @@ import lombok.ToString;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "member")
+@Table(name = "member", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_member_nickname", columnNames = "nickname")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,6 +26,9 @@ public class Member {
 
     @Column(unique = true, length = 100)
     private String email;
+
+    @Column(nullable = false, length = 20)
+    private String nickname;
 
     @Column(length = 255)
     private String pwd;

@@ -13,11 +13,13 @@
 CREATE TABLE member (
     member_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) UNIQUE,
+    nickname VARCHAR(20) NOT NULL,
     pwd VARCHAR(255),
     image_url VARCHAR(500),
     profile_image_id INT NOT NULL DEFAULT 1,
     reg_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    authority VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER'
+    authority VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER',
+    CONSTRAINT uk_member_nickname UNIQUE (nickname)
 );
 
 
@@ -65,6 +67,7 @@ CREATE TABLE votes (
     member_id BIGINT NOT NULL,
     poll_id BIGINT NOT NULL,
     option_id BIGINT NOT NULL,
+    reg_date DATETIME DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (member_id)
         REFERENCES member(member_id),
