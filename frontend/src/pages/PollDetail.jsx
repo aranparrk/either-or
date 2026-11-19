@@ -679,6 +679,7 @@ const PollDetail = () => {
         <FormFeedback>{deleteError}</FormFeedback>
 
         <PollMeta>
+          {poll.authorNickname && <span>{poll.authorNickname}</span>}
           <StatusBadge $closed={isClosed}>
             {isClosed ? "마감" : "진행 중"}
           </StatusBadge>

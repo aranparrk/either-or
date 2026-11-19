@@ -149,7 +149,7 @@ const CommentItem = ({ comment, onDeleted, onUpdated }) => {
   };
   return (
     <Item>
-      <Writer>익명</Writer>
+      <Writer>{comment.nickname || "익명"}</Writer>
       <CommentRow>
         {isEditing ? (
           <EditInput

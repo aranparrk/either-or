@@ -73,7 +73,8 @@ public class SocialAuthController {
         Member member = socialAuthService.signUpSocial(
                 pending.provider(),
                 pending.providerId(),
-                dto.profileId()
+                dto.profileId(),
+                dto.nickname()
         );
 
         // 5. 기존 JWT 발급 로직 재사용

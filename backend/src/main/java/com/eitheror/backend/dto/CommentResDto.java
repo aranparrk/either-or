@@ -11,7 +11,7 @@ public class CommentResDto {
     private Long commentId;
     private Long pollId;
     private Long memberId;
-    private String email;          // 작성자 식별용 (또는 닉네임)
+    private String nickname;
     private String content;
     private LocalDateTime regDate;
 
@@ -19,7 +19,7 @@ public class CommentResDto {
         this.commentId = comment.getCommentId();
         this.pollId = comment.getPoll().getPollId();
         this.memberId = comment.getMember().getMemberId();
-        this.email = comment.getMember().getEmail();
+        this.nickname = comment.getMember().getNickname();
         this.content = comment.getContent();
         this.regDate = comment.getRegDate();
     }

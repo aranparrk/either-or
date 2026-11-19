@@ -63,4 +63,23 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
         Long getPollId();
         Long getVoteCount();
     }
+
+    @Query("""
+        SELECT MIN(o.optionId) AS optionId, COUNT(v) AS voteCount
+        FROM Vote v JOIN v.pollOption o
+        WHERE v.regDate >= :start AND v.regDate < :end
+          AND o.tourContentId IS NOT NULL AND o.tourContentId <> ''
+        GROUP BY o.tourContentId
+        ORDER BY COUNT(v) DESC, o.tourContentId ASC
+        """)
+    List<WeeklyDestinationRow> findWeeklyDestinations(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            Pageable pageable
+    );
+
+    interface WeeklyDestinationRow {
+        Long getOptionId();
+        Long getVoteCount();
+    }
 }
