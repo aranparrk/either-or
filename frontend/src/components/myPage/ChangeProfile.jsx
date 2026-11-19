@@ -7,8 +7,8 @@ import profile2 from "../../assets/profiles/profile2.png"
 import profile3 from "../../assets/profiles/profile3.png"
 import profile4 from "../../assets/profiles/profile4.png"
 import profile5 from "../../assets/profiles/profile5.png"
+import AxiosApi from "../../api/AxiosApi.jsx";
 
-import { uploadImage } from "../../api/imgBB.jsx";
 
   const profiles = [
       profile1,
@@ -19,7 +19,7 @@ import { uploadImage } from "../../api/imgBB.jsx";
   ];
 
 const ProfileSection = styled.div`
-  margin-bottom: 100px;
+  margin-bottom: 36px;
 `;
 
 const PreviewArea = styled.div`
@@ -126,11 +126,14 @@ const ChangeProfile = ({
     try {
       setUploading(true);
 
-      // ImgBB 업로드
-      const uploadedUrl = await uploadImage(file);
+      // 백엔드로 이미지 업로드
+      const response = await AxiosApi.uploadImage(file);
+
+      // 백엔드에서 받은 이미지 주소
+      const uploadUrl = response.data.imageUrl;
 
       // 부모 컴포넌트에 이미지 주소 전달
-      onImageUploaded(uploadedUrl);
+      onImageUploaded(uploadUrl);
 
     } catch (error) {
       console.error("이미지 업로드 실패:", error);
@@ -149,7 +152,7 @@ const ChangeProfile = ({
       <PreviewArea>
        <p>프로필</p>
        <PreviewImage
-          src={imageUrl || previewSrc}
+          src={ imageUrl || previewSrc }
           alt="프로필 미리보기"
         />
       </PreviewArea>

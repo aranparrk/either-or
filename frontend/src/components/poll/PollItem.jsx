@@ -6,21 +6,17 @@ const PollCard = styled(Link)`
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: clamp(12px, 3vw, 20px);
-
-  background-color: #fff;
-  border: 1px solid #e5eae7;
-  border-radius: 18px;
-  box-shadow: 0 2px 5px rgb(20 43 34 / 7%);
-  text-decoration: none;
+  padding: 14px clamp(12px, 2vw, 18px) 16px;
+  border: 1px solid #cdd8d2;
+  border-radius: 6px;
+  background: #fff;
   color: inherit;
+  text-decoration: none;
 
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-
-  &:hover {
-    transform: translateY(-3px);
-    border-color: #b2cbbf;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  @media (hover: hover) {
+    &:hover {
+      background: #f6f7f6;
+    }
   }
 
   &:focus-visible {
@@ -33,8 +29,8 @@ const PollCard = styled(Link)`
 const StatusBadge = styled.span`
   display: inline-block;
   align-self: flex-start;
-  padding: 4px 12px;
-  border-radius: 999px;
+  padding: 3px 8px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 700;
 
@@ -66,7 +62,7 @@ const OptionMedia = styled.div`
   min-height: 84px;
   padding: 4px 6px;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 6px;
   background-color: #eef4f0;
   color: #4e6359;
   font-size: 13px;
@@ -77,8 +73,7 @@ const OptionImage = styled.img`
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-`;
+  object-fit: cover;`;
 
 const ImagePlaceholder = styled.span`
   align-self: center;
@@ -104,8 +99,23 @@ const OptionLetter = styled.span`
   color: ({ $second }) => ($second ? "#bd4e3d" : "#086646");
 `;
 
+const PollTitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+`;
+
+const NewLabel = styled.span`
+  flex: none;
+  color: #b42318;
+  font-size: 11px;
+  font-weight: 700;
+`;
+
 // 투표 제목
 const PollTitle = styled.h3`
+  min-width: 0;
   margin: 0;
   font-size: clamp(17px, 2.2vw, 20px);
   font-weight: 700;
@@ -113,10 +123,8 @@ const PollTitle = styled.h3`
   color: #17231d;
 
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 `;
 
 // 카드 하단
@@ -132,13 +140,6 @@ const CardFooter = styled.div`
 const Deadline = styled.span`
   font-size: 13px;
   color: #535d57;
-`;
-
-const DetailLink = styled.span`
-  font-size: 13px;
-  font-weight: 700;
-  color: #086646;
-  white-space: nowrap;
 `;
 
 // 카드 상단
@@ -158,7 +159,7 @@ const VoteCount = styled.span`
 `;
 
 // 투표 카드 하나를 출력하는 컴포넌트
-const PollItem = ({ poll }) => {
+const PollItem = ({ poll, isNew }) => {
   const isClosed = new Date(poll.deadline) <= new Date();
 
   return (
@@ -172,7 +173,10 @@ const PollItem = ({ poll }) => {
       </CardHeader>
 
       <PollInfo>
-        <PollTitle>{poll.title}</PollTitle>
+        <PollTitleRow>
+          <PollTitle title={poll.title}>{poll.title}</PollTitle>
+          {isNew && <NewLabel>NEW</NewLabel>}
+        </PollTitleRow>
 
         <OptionGrid>
           {["A", "B"].map((label, index) => {
@@ -200,10 +204,6 @@ const PollItem = ({ poll }) => {
         <Deadline>
           마감일: {new Date(poll.deadline).toLocaleString("ko-KR")}
         </Deadline>
-
-        <DetailLink>
-          {isClosed ? "자세히 보기" : "투표 참여하기"} <span aria-hidden="true">→</span>
-        </DetailLink>
       </CardFooter>
     </PollCard>
   );

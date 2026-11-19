@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(
         name = "votes",
@@ -34,4 +36,6 @@ public class Vote {
     @JoinColumn(name = "option_id", nullable = false)
     private PollOption pollOption;
 
+    @Column(name = "reg_date", insertable = false, updatable = false)
+    private LocalDateTime regDate;
 }

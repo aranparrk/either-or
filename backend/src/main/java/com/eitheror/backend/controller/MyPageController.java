@@ -9,6 +9,8 @@ import com.eitheror.backend.service.CommentService;
 import com.eitheror.backend.service.PollService;
 import com.eitheror.backend.service.FavoriteService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "마이페이지 API", description = "마이페이지")
 @RestController
 @RequestMapping("/api/mypage")
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class MyPageController {
     private final FavoriteService favoriteService;
 
     // 내가 작성한 투표 조회
+    @Operation(summary = "투표 조회", description = "내가 쓴 투표 조회")
     @GetMapping("/polls")
     public ResponseEntity<List<PollListResDto>> getMyPolls() {
 
@@ -40,6 +44,7 @@ public class MyPageController {
     }
 
     // 내가 작성한 댓글 조회
+    @Operation(summary = "댓글 조회", description = "내가 쓴 댓글 조회")
     @GetMapping("/comments")
     public ResponseEntity<List<MyCommentResDto>> getMyComments() {
 

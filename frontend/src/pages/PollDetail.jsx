@@ -6,6 +6,7 @@ import styled from "styled-components";
 import CommentItem from "../components/comment/CommentItem";
 import Button from "../components/common/Button";
 import FormFeedback from "../components/common/FormFeedback.jsx";
+import { DeleteDialog, DeleteDialogActions } from "../components/common/DeleteDialog.js";
 import { Client } from "@stomp/stompjs";
 
 const PageContainer = styled.div`
@@ -43,7 +44,7 @@ const PageFooter = styled.div`
 `;
 
 const PollHeader = styled.div`
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 `;
 
 const TitleRow = styled.div`
@@ -54,8 +55,15 @@ const TitleRow = styled.div`
   margin-bottom: 12px;
 `;
 
-const PollTitle = styled.h2`
+const PollTitleGroup = styled.div`
+  display: flex;
   flex: 1 1 240px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+`;
+
+const PollTitle = styled.h2`
   min-width: 0;
   margin: 0;
   font-size: 28px;
@@ -74,15 +82,17 @@ const PollMeta = styled.div`
 `;
 
 const StatusBadge = styled.span`
+  flex: none;
+  white-space: nowrap;
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 12px;
-  background-color: ${({ $closed }) => ($closed ? "#e9e9eb" : "#373a40")};
-  color: ${({ $closed }) => ($closed ? "#666" : "#fff")};
+  background-color: ${({ $closed }) => ($closed ? "#f1f2f4" : "#d9f5e2")};
+  color: ${({ $closed }) => ($closed ? "#59605e" : "#075538")};
 `;
 
 const PollContent = styled.p`
-  margin: 0;
+  margin: 0 0 28px;
   font-size: 15px;
   color: #666;
   line-height: 1.8;
@@ -92,7 +102,7 @@ const PollContent = styled.p`
 
 const VoteSection = styled.section`
   margin-bottom: 40px;
-  padding-top: 28px;
+  padding-top: 18px;
   border-top: 1px solid #e5e7eb;
 `;
 
@@ -107,7 +117,7 @@ const VoteHeading = styled.div`
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
 
   ${SectionTitle} {
     margin: 0;
@@ -140,24 +150,31 @@ const OptionImage = styled.img`
   }
 `;
 
-const OptionButton = styled.button`
+const OptionCard = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: clamp(8px, 2vw, 16px);
-  text-align: left;
-  font: inherit;
+  min-width: 0;
+  padding: clamp(8px, 2vw, 14px);
+  border: 1px solid ${({ $selected }) => ($selected ? "#205c50" : "#dce7e1")};
+  border-radius: 6px;
+  background: ${({ $selected }) => ($selected ? "#f0f6f2" : "#fff")};
   color: inherit;
+  font: inherit;
+  text-align: left;
   overflow-wrap: anywhere;
-  border: 1px solid ${({ $selected }) => ($selected ? "#373a40" : "#d1d5db")};
-  border-radius: 4px;
-  background-color: ${({ $selected }) => ($selected ? "#f1f2f4" : "#fafafa")};
-  cursor: pointer;
-  transition: 0.2s;
 
-  &:hover:not(:disabled),
+  &:is(button) {
+    cursor: pointer;
+  }
+
+  &:is(button):hover:not(:disabled) {
+    background: #f6f7f6;
+  }
+
   &:focus-visible {
-    border-color: #888;
+    outline: 2px solid #205c50;
+    outline-offset: 2px;
   }
 
   &:disabled {
@@ -179,6 +196,14 @@ const CommentSection = styled.section`
   margin-top: 40px;
   padding-top: 28px;
   border-top: 1px solid #e5e7eb;
+`;
+
+const CommentCount = styled.span`
+  margin-inline-start: 6px;
+  color: #59605e;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 `;
 
 const CommentInput = styled.textarea`
@@ -245,13 +270,43 @@ const AuthorButton = styled.button`
   }
 `;
 
+const OptionName = styled.span`
+  display: block;
+  font-size: clamp(16px, 2vw, 20px);
+  font-weight: 700;
+`;
+
+const OptionMedia = styled.span`
+  display: grid;
+  min-width: 0;
+
+  ${OptionImage},
+  ${OptionName} {
+    grid-area: 1 / 1;
+  }
+
+  ${OptionImage} + ${OptionName} {
+    align-self: end;
+    justify-self: center;
+    text-align: center;
+    max-width: calc(100% - 16px);
+    margin: 8px;
+    padding: 4px 9px;
+    border-radius: 4px;
+    background: rgb(17 23 21 / 84%);
+    color: #fff;
+  }
+`;
+
+const RESULT_COLORS = ["#5572b1", "#a34f45"];
+
 const ResultBar = styled.div`
   position: relative;
   display: flex;
   width: 100%;
-  height: 25px;
-  background-color: #e9e9eb;
-  border-radius: 12.5px;
+  height: 40px;
+  background-color: #626b77;
+  border-radius: 2px;
   overflow: hidden;
 `;
 
@@ -261,75 +316,42 @@ const ResultBarLabels = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 0 6px;
+  gap: 4px;
+  padding: 0 9px;
 `;
 
 const ResultBarLabel = styled.span`
-  padding: 1px 6px;
-  border-radius: 10px;
-  background-color: rgba(255, 255, 255, 0.93);
-  color: #242424;
-  font-size: 12px;
+  color: #fff;
+  font-size: 16px;
   font-weight: 700;
-  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
   white-space: nowrap;
 `;
 
 const ResultFill = styled.div`
   height: 100%;
-  background-color: ${({ $second }) => ($second ? "#a8b5c7" : "#373a40")};
-  transition: width 0.2s ease;
-`;
+  background-color: ${({ $second }) => RESULT_COLORS[$second ? 1 : 0]};
 
-const ResultCard = styled.div`
-  padding: clamp(8px, 2vw, 16px);
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  overflow-wrap: anywhere;
-`;
-
-const ResultOptionButton = styled(ResultCard).attrs({
-  as: "button",
-  type: "button",
-})`
-  background-color: ${({ $selected }) => ($selected ? "#f1f2f4" : "#fafafa")};
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-
-  &:hover:not(:disabled),
-  &:focus-visible {
-    border-color: #373a40;
-  }
-
-  &:disabled {
-    cursor: wait;
-  }
-`;
-
-const OptionName = styled.span`
-  display: block;
-  width: 100%;
-  margin: 0;
-  text-align: center;
-  font-size: clamp(16px, 2vw, 20px);
-  font-weight: 700;
-
-  ${OptionImage}:not([hidden]) + & {
-    margin-top: 10px;
+  @media (prefers-reduced-motion: no-preference) {
+    transition: width 200ms ease;
   }
 `;
 
 const ResultDot = styled.span`
   display: inline-block;
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   margin-right: 8px;
   vertical-align: middle;
   border-radius: 50%;
-  background-color: ${({ $second }) => ($second ? "#a8b5c7" : "#373a40")};
+  background-color: ${({ $second }) => RESULT_COLORS[$second ? 1 : 0]};
+`;
+
+const VoteHint = styled.p`
+  margin: 10px 0 0;
+  color: #59605e;
+  font-size: 13px;
 `;
 
 const WinnerBadge = styled.span`
@@ -347,12 +369,12 @@ const WinnerBadge = styled.span`
 
 // 상세페이지에 이미지 추가
 const PollImage = styled.img`
-  display: flex;
+  display: block;
   max-width: 100%;
   max-height: 500px;
   object-fit: contain;
   border-radius: 14px;
-  margin: 28px auto 0;
+  margin: 0 auto 28px;
 `;
 
 function PollOptionImage({ option, onError }) {
@@ -370,22 +392,18 @@ function PollOptionImage({ option, onError }) {
 const PollDetail = () => {
   const { id } = useParams();
   const nav = useNavigate();
+  const deleteDialogRef = useRef(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
   const handleDelete = async () => {
-    if (
-      isDeleting ||
-      !window.confirm(
-        "투표를 삭제할까요? 연결된 댓글과 투표 기록도 삭제되며 복구할 수 없습니다."
-      )
-    )
-      return;
+    if (isDeleting) return;
     setIsDeleting(true);
     setDeleteError("");
     try {
       await AxiosApi.pollDelete(id);
+      deleteDialogRef.current?.close();
       nav("/", { replace: true });
     } catch (error) {
       const status = error.response?.status;
@@ -525,7 +543,9 @@ const PollDetail = () => {
     return <PageContainer>로딩 중...</PageContainer>;
   }
 
-  const isClosed = new Date(poll.deadline) <= new Date();
+  const deadline = new Date(poll.deadline);
+  const isClosed = deadline <= new Date();
+  const hasResultView = isClosed || showResult;
   const options = poll.options ?? [];
   const showOptionPhotos = options.length === 2
     && options.every((option) => option.imageUrl?.trim() && option.imageUrl !== failedPhoto);
@@ -628,7 +648,12 @@ const PollDetail = () => {
     <PageContainer>
       <PollHeader>
         <TitleRow>
-          <PollTitle>{poll.title}</PollTitle>
+          <PollTitleGroup>
+            <StatusBadge $closed={isClosed}>
+              {isClosed ? "마감" : "진행 중"}
+            </StatusBadge>
+            <PollTitle>{poll.title}</PollTitle>
+          </PollTitleGroup>
           {currentMemberId() === String(poll.authorId) && (
             <AuthorActions>
               <AuthorButton
@@ -656,7 +681,10 @@ const PollDetail = () => {
                 type="button"
                 $danger
                 disabled={isDeleting}
-                onClick={handleDelete}
+                onClick={() => {
+                  setDeleteError("");
+                  deleteDialogRef.current?.showModal();
+                }}
               >
                 <svg
                   width="14"
@@ -676,61 +704,77 @@ const PollDetail = () => {
             </AuthorActions>
           )}
         </TitleRow>
-        <FormFeedback>{deleteError}</FormFeedback>
+        <DeleteDialog
+          ref={deleteDialogRef}
+          aria-labelledby="delete-poll-title"
+          aria-describedby="delete-poll-description"
+          onCancel={(event) => {
+            if (isDeleting) event.preventDefault();
+          }}
+        >
+          <h2 id="delete-poll-title">투표를 삭제할까요?</h2>
+          <p id="delete-poll-description">
+            연결된 댓글과 투표 기록도 함께 삭제되며 복구할 수 없어요.
+          </p>
+          <FormFeedback>{deleteError}</FormFeedback>
+          <DeleteDialogActions>
+            <AuthorButton
+              type="button"
+              autoFocus
+              disabled={isDeleting}
+              onClick={() => deleteDialogRef.current?.close()}
+            >
+              취소
+            </AuthorButton>
+            <AuthorButton $danger type="button" disabled={isDeleting} onClick={handleDelete}>
+              {isDeleting ? "삭제 중…" : "삭제하기"}
+            </AuthorButton>
+          </DeleteDialogActions>
+        </DeleteDialog>
 
         <PollMeta>
-          <StatusBadge $closed={isClosed}>
-            {isClosed ? "마감" : "진행 중"}
-          </StatusBadge>
-
-          <span>마감일: {new Date(poll.deadline).toLocaleString("ko-KR")}</span>
+          {poll.authorNickname && <span>{poll.authorNickname}</span>}
+          <time dateTime={poll.deadline}>마감일: {deadline.toLocaleString("ko-KR")}</time>
         </PollMeta>
 
-        {poll.content?.trim() && <PollContent>{poll.content}</PollContent>}
-        {poll.contentImage && (
-          <PollImage src={poll.contentImage} alt="이미지" />
-        )}
       </PollHeader>
 
       <VoteSection>
         <VoteHeading>
           <SectionTitle>
-            {isClosed || showResult ? "투표 결과" : "투표하기"}
+            {hasResultView ? "투표 결과" : "투표하기"}
           </SectionTitle>
-          {(isClosed || showResult) && result && <TotalVotes>총 {result.totalVotes}표</TotalVotes>}
+          {hasResultView && result && <TotalVotes>총 {result.totalVotes}표</TotalVotes>}
         </VoteHeading>
 
-        {isClosed || showResult ? (
-          result ? (
-            <>
-              {!isClosed && <p>다른 선택지를 누르면 투표가 변경됩니다.</p>}
-
-              <OptionGrid>
-                {optionResults.map(({ option }, index) => {
-                  const card = (
-                    <>
-                      {showOptionPhotos && <PollOptionImage option={option} onError={setFailedPhoto} />}
-                      <OptionName>
-                        <ResultDot $second={index === 1} aria-hidden="true" />
-                        {option.content}
-                        {option.optionId === winningOptionId && <WinnerBadge>최다 득표</WinnerBadge>}
-                      </OptionName>
-                    </>
-                  );
-                  return isClosed ? (
-                    <ResultCard key={option.optionId}>{card}</ResultCard>
-                  ) : (
-                    <ResultOptionButton
-                      key={option.optionId}
-                      $selected={pendingOptionId === option.optionId}
-                      disabled={pendingOptionId !== null}
-                      onClick={() => handleVote(option.optionId)}
-                    >
-                      {card}
-                    </ResultOptionButton>
-                  );
-                })}
-              </OptionGrid>
+        {hasResultView && !result ? (
+          <Notice>{resultError || "투표 결과를 불러오는 중..."}</Notice>
+        ) : (
+          <>
+            <OptionGrid>
+              {optionResults.map(({ option }, index) => (
+                <OptionCard
+                  key={option.optionId}
+                  as={isClosed ? "div" : "button"}
+                  type={isClosed ? undefined : "button"}
+                  $selected={pendingOptionId === option.optionId}
+                  disabled={!isClosed && pendingOptionId !== null ? true : undefined}
+                  onClick={isClosed ? undefined : () => handleVote(option.optionId)}
+                >
+                  <OptionMedia>
+                    {showOptionPhotos && <PollOptionImage option={option} onError={setFailedPhoto} />}
+                    <OptionName>
+                      {hasResultView && <ResultDot $second={index === 1} aria-hidden="true" />}
+                      {option.content}
+                      {hasResultView && option.optionId === winningOptionId && (
+                        <WinnerBadge>최다 득표</WinnerBadge>
+                      )}
+                    </OptionName>
+                  </OptionMedia>
+                </OptionCard>
+              ))}
+            </OptionGrid>
+            {hasResultView && (
               <ResultBar>
                 {optionResults.map(({ option, percentage }, index) => (
                   <ResultFill
@@ -757,44 +801,27 @@ const PollDetail = () => {
                   })}
                 </ResultBarLabels>
               </ResultBar>
-
-              {pendingOptionId !== null && (
-                <Notice role="status">투표 처리 중…</Notice>
-              )}
-              {resultError && pendingOptionId === null && (
-                <Notice role="status">{resultError}</Notice>
-              )}
-            </>
-          ) : (
-            <Notice>{resultError || "투표 결과를 불러오는 중..."}</Notice>
-          )
-        ) : (
-          <>
-            <OptionGrid>
-              {options.map((option) => (
-                <OptionButton
-                  key={option.optionId}
-                  type="button"
-                  $selected={pendingOptionId === option.optionId}
-                  disabled={pendingOptionId !== null}
-                  onClick={() => handleVote(option.optionId)}
-                >
-                  {showOptionPhotos && <PollOptionImage option={option} onError={setFailedPhoto} />}
-                  <OptionName>{option.content}</OptionName>
-                </OptionButton>
-              ))}
-            </OptionGrid>
-
-            {pendingOptionId !== null && (
-              <Notice role="status">투표 처리 중…</Notice>
+            )}
+            {hasResultView && !isClosed && <VoteHint>다른 선택지를 누르면 투표가 변경됩니다.</VoteHint>}
+            {pendingOptionId !== null && <Notice role="status">투표 처리 중…</Notice>}
+            {hasResultView && resultError && pendingOptionId === null && (
+              <Notice role="status">{resultError}</Notice>
             )}
           </>
         )}
         <FormFeedback>{voteError}</FormFeedback>
       </VoteSection>
 
+      {poll.content?.trim() && <PollContent>{poll.content}</PollContent>}
+      {poll.contentImage && <PollImage src={poll.contentImage} alt="게시글 첨부 이미지" />}
+
       <CommentSection>
-        <SectionTitle>댓글</SectionTitle>
+        <SectionTitle>
+          댓글
+          {comments.length > 0 && (
+            <CommentCount>{comments.length.toLocaleString("ko-KR")}개</CommentCount>
+          )}
+        </SectionTitle>
         {comments.length === 0 ? (
           <Notice>아직 댓글이 없습니다.</Notice>
         ) : (

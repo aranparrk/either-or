@@ -124,11 +124,12 @@ const AxiosApi = {
   },
 
   // 회원가입
-  memberSignup: async (email, pwd, profileId) => {
+  memberSignup: async (email, pwd, profileId, nickname) => {
     return await api.post("/api/auth/signup", {
       email,
       pwd,
       profileId,
+      nickname,
     });
   },
 
@@ -145,7 +146,7 @@ const AxiosApi = {
     return await api.post("/api/auth/logout");
   },
 
-    // 회원탈퇴
+  // 회원탈퇴
   memberWithdraw: async () => {
     return await api.delete("/api/auth/withdraw")
   },
@@ -158,6 +159,10 @@ const AxiosApi = {
   pollList: async () => {
     return await api.get("/api/votes");
   },
+
+  weeklyRanking: (signal) => api.get("/api/votes/weekly-ranking", { signal }),
+
+  weeklyDestinations: (signal) => api.get("/api/votes/weekly-destinations", { signal }),
 
   searchTourSpots: (keyword) => api.get("/api/tour-spots", { params: { keyword } }),
 
@@ -246,13 +251,16 @@ const AxiosApi = {
     return await api.get("/api/mypage/comments");
   },
 
+  memberNickname: (signal) => api.get("/api/member/nickname", { signal }),
+
   // 회원 정보 수정
-  memberUpdate: async (currentPwd, newPwd, imageUrl, profileId) => {
+  memberUpdate: async (currentPwd, newPwd, imageUrl, profileId, nickname) => {
     return await api.patch("/api/member/update", {
       currentPwd,
       newPwd,
       imageUrl,
       profileId,
+      nickname,
     });
   },
 
@@ -263,6 +271,14 @@ const AxiosApi = {
     });
   },
 
+  // ====================================
+  // 이미지서버 API
+  // ====================================
+  uploadImage: async (imageFile) => {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    return await api.post("/api/image/upload", formData);
+  },
 };
 
 export default AxiosApi;

@@ -38,7 +38,8 @@ public class SocialAuthService {
     public Member signUpSocial(
             SocialProvider provider,
             String providerId,
-            Integer profileId
+            Integer profileId,
+            String nickname
     ) {
 
         // 프로필 선택 확인
@@ -58,10 +59,11 @@ public class SocialAuthService {
         // Member 생성
         Member member = new Member();
         member.setProfileId(profileId);
+        member.setNickname(Nicknames.requireValid(nickname));
         member.setAuthority(Authority.ROLE_USER);
 
         // 소셜 전용 회원은 이메일, 비밀번호 없이 저장
-        memberRepository.save(member);
+        Nicknames.saveMember(memberRepository, member);
 
         // SocialAccount 생성
         SocialAccount socialAccount = new SocialAccount();
