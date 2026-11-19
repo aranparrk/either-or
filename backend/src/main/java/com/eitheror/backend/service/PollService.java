@@ -359,13 +359,8 @@ public class PollService {
 
     // 주간 랭킹
     public List<WeeklyRankingResDto> getWeeklyRanking() {
-        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
-        LocalDate sunday = today.with(
-                TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)
-        );
-
-        LocalDateTime start = sunday.atStartOfDay();
-        LocalDateTime end = sunday.plusWeeks(1).atStartOfDay();
+        LocalDateTime start = currentWeekStart();
+        LocalDateTime end = start.plusWeeks(1);
 
         var rows = voteRepository.findWeeklyRanking(start, end, PageRequest.of(0, 5));
 
@@ -382,6 +377,36 @@ public class PollService {
         }
 
         return ranking;
+    }
+
+    @Transactional(readOnly = true)
+    public List<WeeklyDestinationResDto> getWeeklyDestinations() {
+        LocalDateTime start = currentWeekStart();
+        var rows = voteRepository.findWeeklyDestinations(start, start.plusWeeks(1), PageRequest.of(0, 5));
+        var optionIds = rows.stream().map(VoteRepository.WeeklyDestinationRow::getOptionId).toList();
+        var options = pollOptionRepository.findAllById(optionIds).stream()
+                .collect(Collectors.toMap(PollOption::getOptionId, option -> option));
+
+        List<WeeklyDestinationResDto> destinations = new ArrayList<>();
+        for (var row : rows) {
+            PollOption option = options.get(row.getOptionId());
+            if (option != null) {
+                destinations.add(new WeeklyDestinationResDto(
+                        option.getTourContentId(),
+                        option.getContent(),
+                        option.getTourImageUrl(),
+                        option.getPoll().getPollId(),
+                        row.getVoteCount()
+                ));
+            }
+        }
+        return destinations;
+    }
+
+    private static LocalDateTime currentWeekStart() {
+        return LocalDate.now(ZoneId.of("Asia/Seoul"))
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+                .atStartOfDay();
     }
 
     // 목록 조회 DTO 변환
@@ -410,6 +435,7 @@ public class PollService {
 
         pollDetailResDto.setPollId(poll.getPollId());
         pollDetailResDto.setAuthorId(poll.getMember().getMemberId());
+        pollDetailResDto.setAuthorNickname(poll.getMember().getNickname());
         pollDetailResDto.setTotalVotes(
                 voteRepository.countByPoll_PollId(poll.getPollId())
         );

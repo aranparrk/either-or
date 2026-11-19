@@ -33,6 +33,13 @@ public class MemberService {
         return pwdEncoder.matches(currentPwd, member.getPwd());
     }
 
+    @Transactional(readOnly = true)
+    public String getNickname() {
+        return memberRepository.findByMemberId(SecurityUtil.currentMemberId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원이 존재하지 않습니다."))
+                .getNickname();
+    }
+
     // 회원 정보 수정
     public boolean memberUpdate(MemberUpdateReqDto dto) {
 
@@ -44,6 +51,10 @@ public class MemberService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "해당 회원이 존재하지 않습니다:" + memberId
                 ));
+
+        if (dto.getNickname() != null) {
+            member.setNickname(Nicknames.requireValid(dto.getNickname()));
+        }
 
         // 비밀번호 변경
         if (dto.getNewPwd() != null && !dto.getNewPwd().isBlank()) {
@@ -71,6 +82,10 @@ public class MemberService {
             member.setProfileId(dto.getProfileId());
             member.setImageUrl(null);
 
+        }
+
+        if (dto.getNickname() != null) {
+            Nicknames.saveMember(memberRepository, member);
         }
 
         return true;

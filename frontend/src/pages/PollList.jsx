@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import AxiosApi from "../api/AxiosApi";
 import styled from "styled-components";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import TravelCover from "../components/common/TravelCover.jsx";
 import PollItem from "../components/poll/PollItem";
 
@@ -31,7 +31,7 @@ const PageGrid = styled.div`
 
   @media (max-width: 1000px) {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "cover" "search" "polls" "ranking" "assistant";
+    grid-template-areas: "cover" "polls" "ranking" "destinations";
   }
 `;
 
@@ -61,31 +61,17 @@ const Sidebar = styled.aside`
   }
 `;
 
-const SidebarPanel = styled.section`
-  padding: clamp(16px, 2.2vw, 26px);
-  border: 1px solid #e0ede7;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #f1f8f5, #e6f3ed);
-`;
-
-const SearchPanel = styled(SidebarPanel)`
+const DestinationsPanel = styled.section`
   @media (max-width: 1000px) {
-    grid-area: search;
+    grid-area: destinations;
   }
 `;
 
-const RankingPanel = styled(SidebarPanel)`
+const RankingPanel = styled.section`
+  min-width: 0;
+
   @media (max-width: 1000px) {
     grid-area: ranking;
-  }
-  border-color: #e5eae7;
-  background: #fff;
-  box-shadow: 0 2px 5px rgb(20 43 34 / 7%);
-`;
-
-const AssistantPanel = styled(SidebarPanel)`
-  @media (max-width: 1000px) {
-    grid-area: assistant;
   }
 `;
 
@@ -96,22 +82,69 @@ const PanelTitle = styled.h2`
   line-height: 1.3;
 `;
 
-const SearchInput = styled.input`
-  width: 100%;
+const DestinationSlides = styled.div`
+  display: grid;
+`;
+
+const DestinationLink = styled(Link)`
+  grid-area: 1 / 1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
   min-width: 0;
-  margin-top: 14px;
-  padding: 12px 16px;
-  border: 1px solid #cdded5;
-  border-radius: 999px;
-  background: #fff;
-  color: #173c35;
-  font: inherit;
-  font-size: 14px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 16px;
+  isolation: isolate;
+  background: #205c50;
+  color: #fff;
+  text-decoration: none;
+  opacity: ${({ $active }) => ($active ? 1 : 0)};
+  pointer-events: ${({ $active }) => ($active ? "auto" : "none")};
+  transition: opacity 650ms ease-in-out;
 
   &:focus-visible {
     outline: 2px solid #205c50;
-    outline-offset: 2px;
+    outline-offset: 3px;
+    z-index: 1;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+`;
+
+const DestinationImage = styled.img`
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const DestinationCaption = styled.div`
+  width: 100%;
+  padding: 34px clamp(14px, 2vw, 22px) 16px;
+  background: linear-gradient(transparent, rgb(9 25 22 / 88%));
+`;
+
+const DestinationHeading = styled.h2`
+  margin: 0 0 4px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+`;
+
+const DestinationName = styled.strong`
+  display: block;
+  color: #fff;
+  font-size: clamp(18px, 2.2vw, 26px);
+  line-height: 1.2;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 `;
 
 const PanelMessage = styled.p`
@@ -124,10 +157,9 @@ const PanelMessage = styled.p`
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 
 const RankingList = styled.ol`
-  display: grid;
-  gap: 10px;
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   padding: 0;
+  border-top: 1px solid #cdd8d2;
   list-style: none;
 `;
 
@@ -136,6 +168,8 @@ const RankingItem = styled.li`
   grid-template-columns: 24px minmax(0, 1fr);
   align-items: baseline;
   gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5eae7;
 `;
 
 const RankMarker = styled.span`
@@ -273,9 +307,14 @@ const PollList = () => {
   const [polls, setPolls] = useState([]);
   const [ranking, setRanking] = useState(null);
   const [rankingError, setRankingError] = useState(false);
+  const [destinations, setDestinations] = useState(null);
+  const [destinationsError, setDestinationsError] = useState(false);
+  const [slide, setSlide] = useState(0);
+  const [isDestinationHovered, setIsDestinationHovered] = useState(false);
+  const [isDestinationFocused, setIsDestinationFocused] = useState(false);
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("latest");
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     AxiosApi.pollList()
@@ -301,7 +340,32 @@ const PollList = () => {
     return () => controller.abort();
   }, []);
 
-  const keyword = search.trim().toLowerCase();
+  useEffect(() => {
+    const controller = new AbortController();
+
+    AxiosApi.weeklyDestinations(controller.signal)
+      .then((response) => {
+        if (!controller.signal.aborted) setDestinations(response.data);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setDestinationsError(true);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  const destinationCount = destinations?.length ?? 0;
+  useEffect(() => {
+    if (destinationCount < 2 || isDestinationHovered || isDestinationFocused) return;
+
+    const timer = window.setInterval(() => {
+      setSlide((current) => (current + 1) % destinationCount);
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [destinationCount, isDestinationHovered, isDestinationFocused]);
+
+  const keyword = (searchParams.get("q") ?? "").trim().toLowerCase();
   const filteredPolls = polls
     .filter((poll) => {
       const matchesSearch = !keyword
@@ -344,17 +408,6 @@ const PollList = () => {
         </CoverArea>
 
         <Sidebar aria-label="투표 도구">
-          <SearchPanel aria-labelledby="poll-search-title">
-            <PanelTitle id="poll-search-title">투표 검색</PanelTitle>
-            <SearchInput
-              type="search"
-              aria-label="투표 제목 또는 선택지 이름 검색"
-              placeholder="투표 제목 또는 선택지 이름"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </SearchPanel>
-
           <RankingPanel aria-labelledby="weekly-ranking-title">
             <PanelTitle id="weekly-ranking-title">주간랭킹</PanelTitle>
             {rankingError ? (
@@ -380,10 +433,45 @@ const PollList = () => {
             )}
           </RankingPanel>
 
-          <AssistantPanel aria-labelledby="travel-assistant-title">
-            <PanelTitle id="travel-assistant-title">AI 여행 도우미</PanelTitle>
-            <PanelMessage>여행지 추천과 일정 안내를 준비 중이에요.</PanelMessage>
-          </AssistantPanel>
+          <DestinationsPanel aria-labelledby="destinations-title">
+            {destinationCount > 0 ? (
+              <DestinationSlides
+                onMouseEnter={() => setIsDestinationHovered(true)}
+                onMouseLeave={() => setIsDestinationHovered(false)}
+                onFocus={() => setIsDestinationFocused(true)}
+                onBlur={() => setIsDestinationFocused(false)}
+              >
+                {destinations.map((destination, index) => (
+                  <DestinationLink
+                    key={destination.contentId}
+                    to={`/votes/${destination.pollId}`}
+                    $active={index === slide}
+                    aria-hidden={index !== slide}
+                    tabIndex={index === slide ? undefined : -1}
+                  >
+                    {destination.imageUrl && (
+                      <DestinationImage src={destination.imageUrl} alt="" />
+                    )}
+                    <DestinationCaption>
+                      <DestinationHeading id={index === slide ? "destinations-title" : undefined}>
+                        이번 주 인기 여행지
+                      </DestinationHeading>
+                      <DestinationName title={destination.name}>{destination.name}</DestinationName>
+                    </DestinationCaption>
+                  </DestinationLink>
+                ))}
+              </DestinationSlides>
+            ) : (
+              <>
+                <PanelTitle id="destinations-title">이번 주 인기 여행지</PanelTitle>
+                <PanelMessage role="status">
+                  {destinationsError ? "여행지를 불러오지 못했어요." :
+                    destinations === null ? "여행지를 불러오는 중이에요." : "아직 이번 주에 집계된 여행지가 없어요."}
+                </PanelMessage>
+              </>
+            )}
+          </DestinationsPanel>
+
         </Sidebar>
 
         <PollArea aria-label="투표 목록">

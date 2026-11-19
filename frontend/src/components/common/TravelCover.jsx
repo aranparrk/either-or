@@ -8,8 +8,8 @@ const Cover = styled.section`
   flex-direction: column;
   justify-content: flex-end;
   box-sizing: border-box;
-  min-height: ${({ $wide }) => ($wide ? "310px" : "420px")};
-  padding: clamp(24px, 4vw, 44px);
+  min-height: ${({ $wide }) => ($wide ? "244px" : "420px")};
+  padding: ${({ $wide }) => ($wide ? "clamp(20px, 3vw, 32px)" : "clamp(24px, 4vw, 44px)")};
   overflow: hidden;
   border-radius: 20px;
   background: #113e39;
@@ -26,7 +26,7 @@ const Cover = styled.section`
   }
 
   @media (max-width: 760px) {
-    min-height: ${({ $wide }) => ($wide ? "275px" : "190px")};
+    min-height: ${({ $wide }) => ($wide ? "225px" : "190px")};
     border-radius: 16px;
   }
 `;
@@ -44,7 +44,7 @@ const Landscape = styled.img`
 const CoverTitle = styled.h1`
   max-width: 13em;
   margin: 0;
-  font-size: clamp(27px, 4.4vw, 46px);
+  font-size: ${({ $wide }) => ($wide ? "clamp(27px, 4vw, 40px)" : "clamp(27px, 4.4vw, 46px)")};
   font-weight: 800;
   letter-spacing: -.045em;
   line-height: 1.15;
@@ -64,7 +64,7 @@ export default function TravelCover({ title, description, wide = false, children
   return (
     <Cover $wide={wide}>
       <Landscape $wide={wide} src={travelCoast} alt="" fetchPriority="high" />
-      <CoverTitle as={wide ? "h1" : "h2"}>{title}</CoverTitle>
+      <CoverTitle as={wide ? "h1" : "h2"} $wide={wide}>{title}</CoverTitle>
       <CoverDescription>{description}</CoverDescription>
       {children}
     </Cover>

@@ -10,6 +10,7 @@ import lombok.Setter;
 public class SignUpRequestDto {
     // 회원가입 요청 DTO
     private String email;
+    private String nickname;
     private String pwd;
     private Integer profileId;
 }

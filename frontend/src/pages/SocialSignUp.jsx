@@ -1,6 +1,7 @@
 import { useState } from "react";
 import styled from "styled-components";
 import Button from "../components/common/Button.jsx";
+import Input from "../components/common/Input.jsx";
 import ProfileChoice from "../components/common/ProfileChoice.jsx";
 import { saveLogin } from "../util/auth.jsx";
 import { useNavigate } from "react-router-dom";
@@ -27,18 +28,19 @@ const Form = styled.form`
 
 const SocialSignUp = () => {
   const [inputProfileId, setInputProfileId] = useState(0);
+  const [nickname, setNickname] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [message, setMessage] = useState("");
 
   const nav = useNavigate();
 
-  const isProfileId = inputProfileId >= 1 && inputProfileId <= 5;
+  const canSubmit = inputProfileId >= 1 && inputProfileId <= 5 && Boolean(nickname.trim());
 
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    if (!isProfileId || isSubmitting || completed) return;
+    if (!canSubmit || isSubmitting || completed) return;
 
     setIsSubmitting(true);
     setMessage("");
@@ -65,8 +67,14 @@ const SocialSignUp = () => {
         },
         body: JSON.stringify({
           profileId: inputProfileId,
+          nickname: nickname.trim(),
         }),
       });
+
+      if (response.status === 409) {
+        setMessage("이미 사용 중인 닉네임입니다.");
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`회원가입 실패 (${response.status})`);
@@ -94,6 +102,15 @@ const SocialSignUp = () => {
     <Container>
       <Form onSubmit={onSubmit}>
         <h1>소셜 회원가입</h1>
+        <label htmlFor="social-nickname">닉네임</label>
+        <Input
+          id="social-nickname"
+          autoComplete="nickname"
+          value={nickname}
+          maxLength={20}
+          required
+          onChange={(event) => setNickname(event.target.value)}
+        />
         <p>사용할 프로필을 선택해 주세요.</p>
 
         <ProfileChoice
@@ -103,7 +120,7 @@ const SocialSignUp = () => {
 
         <Button
           type="submit"
-          enabled={isProfileId && !isSubmitting && !completed}
+          enabled={canSubmit && !isSubmitting && !completed}
         >
           {isSubmitting ? "가입 중..." : "가입 완료"}
         </Button>

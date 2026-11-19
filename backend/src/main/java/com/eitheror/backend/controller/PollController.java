@@ -63,4 +63,10 @@ public class PollController {
     public ResponseEntity<List<WeeklyRankingResDto>> getWeeklyRanking() {
         return ResponseEntity.ok(pollService.getWeeklyRanking());
     }
+
+    @Operation(summary = "이번 주 인기 여행지", description = "선택지가 받은 이번 주 득표수로 관광지를 집계합니다.")
+    @GetMapping("/weekly-destinations")
+    public ResponseEntity<List<WeeklyDestinationResDto>> getWeeklyDestinations() {
+        return ResponseEntity.ok(pollService.getWeeklyDestinations());
+    }
 }

@@ -93,6 +93,7 @@ const LoginLink = styled(Link)`
 const SignUp = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [inputEmail, setInputEmail] = useState("");
+  const [nickname, setNickname] = useState("");
   const [inputPwd, setInputPwd] = useState("");
   const [inputProfileId, setInputProfileId] = useState(0);
   const [inputPwdConfirm, setInputPwdConfirm] = useState("");
@@ -143,7 +144,7 @@ const SignUp = () => {
   }, [inputEmail, isEmail]);
 
   const isEmailOk = isEmail && emailStatus === "available";
-  const isAllValid = isEmailOk && isPwd && isPwdConfirm && isProfileId;
+  const isAllValid = isEmailOk && isPwd && isPwdConfirm && isProfileId && Boolean(nickname.trim());
 
   const getEmailMessage = () => {
     if (!inputEmail) return "";
@@ -170,14 +171,16 @@ const SignUp = () => {
     setIsSubmitting(true);
     setSignupError("");
     try {
-      const response = await AxiosApi.memberSignup(inputEmail, inputPwd, inputProfileId);
+      const response = await AxiosApi.memberSignup(inputEmail, inputPwd, inputProfileId, nickname.trim());
       if (response.data === true) {
         nav("/login", { replace: true });
       } else {
         setSignupError("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
       }
-    } catch {
-      setSignupError("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    } catch (error) {
+      setSignupError(error.response?.status === 409
+        ? "이미 사용 중인 닉네임입니다."
+        : "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -209,6 +212,16 @@ const SignUp = () => {
               />
               <Message $valid={isEmailOk}>{getEmailMessage()}</Message>
             </Field>
+
+            <Label as="label" htmlFor="signup-nickname">닉네임</Label>
+            <Input
+              id="signup-nickname"
+              autoComplete="nickname"
+              value={nickname}
+              maxLength={20}
+              required
+              onChange={(event) => setNickname(event.target.value)}
+            />
 
             <Label>비밀번호</Label>
             <Field>

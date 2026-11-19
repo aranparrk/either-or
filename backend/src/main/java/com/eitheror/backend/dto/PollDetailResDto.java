@@ -13,6 +13,7 @@ import java.util.List;
 public class PollDetailResDto {
     private Long pollId;
     private Long authorId;
+    private String authorNickname;
     private long totalVotes;
     private String title;
     private String content;
