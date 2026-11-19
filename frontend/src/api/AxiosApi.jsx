@@ -145,7 +145,7 @@ const AxiosApi = {
     return await api.post("/api/auth/logout");
   },
 
-    // 회원탈퇴
+  // 회원탈퇴
   memberWithdraw: async () => {
     return await api.delete("/api/auth/withdraw")
   },
@@ -263,6 +263,14 @@ const AxiosApi = {
     });
   },
 
+  // ====================================
+  // 이미지서버 API
+  // ====================================
+  uploadImage: async (imageFile) => {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    return await api.post("/api/image/upload", formData);
+  },
 };
 
 export default AxiosApi;
