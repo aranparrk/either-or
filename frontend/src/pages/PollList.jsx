@@ -303,8 +303,26 @@ const SortSelect = styled.select`
   cursor: pointer;
 `;
 
+const seoulDate = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" });
+
+function pollRegistrationDate(regDate) {
+  if (!regDate) return null;
+  // Java LocalDateTime 응답은 한국 시간 기준이며 시간대 표기가 없다.
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/i.test(regDate)) return regDate.slice(0, 10);
+
+  const date = new Date(regDate);
+  return Number.isNaN(date.getTime()) ? null : seoulDate.format(date);
+}
+
 const PollList = () => {
   const [polls, setPolls] = useState([]);
+  // 로그인한 사용자의 즐겨찾기 투표 ID 목록
+  const [favoriteIds, setFavoriteIds] = useState(() => new Set());
+  const [favoriteLoadingIds, setFavoriteLoadingIds] = useState(() => new Set());
+  const [isLoggedIn] = useState(
+    () => localStorage.getItem("isLogin")?.toUpperCase() === "TRUE",
+  );
+  const [today, setToday] = useState(() => seoulDate.format(new Date()));
   const [ranking, setRanking] = useState(null);
   const [rankingError, setRankingError] = useState(false);
   const [destinations, setDestinations] = useState(null);
@@ -317,6 +335,19 @@ const PollList = () => {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    const nextMidnight =
+      Date.parse(`${today}T00:00:00+09:00`) + 24 * 60 * 60 * 1000;
+    const timer = window.setTimeout(
+      () => {
+        setToday(seoulDate.format(new Date()));
+      },
+      Math.max(0, nextMidnight - Date.now()),
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [today]);
+
+  useEffect(() => {
     AxiosApi.pollList()
       .then((response) => {
         setPolls(response.data);
@@ -325,6 +356,62 @@ const PollList = () => {
         console.error("투표 목록 조회 실패 : ", error);
       });
   }, []);
+
+  // 로그인한 사용자의 기존 즐겨찾기 상태를 서버에서 불러옵니다.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    AxiosApi.myFavoriteList()
+      .then((response) => {
+        const ids = (response.data ?? []).map((favorite) =>
+          Number(favorite.pollId),
+        );
+        setFavoriteIds(new Set(ids));
+      })
+      .catch((error) => {
+        console.error("즐겨찾기 목록 조회 실패:", error);
+      });
+  }, [isLoggedIn]);
+
+  // 별 버튼 클릭 시 서버에 저장/해제하고 화면 상태를 갱신합니다.
+  const handleToggleFavorite = async (pollId) => {
+    if (!isLoggedIn) {
+      alert("즐겨찾기는 로그인 후 이용할 수 있습니다.");
+      return;
+    }
+
+    if (favoriteLoadingIds.has(pollId)) return;
+
+    setFavoriteLoadingIds((prev) => new Set(prev).add(pollId));
+    const wasFavorite = favoriteIds.has(Number(pollId));
+
+    try {
+      if (wasFavorite) {
+        await AxiosApi.favoriteRemove(pollId);
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          next.delete(Number(pollId));
+          return next;
+        });
+      } else {
+        await AxiosApi.favoriteAdd(pollId);
+        setFavoriteIds((prev) => new Set(prev).add(Number(pollId)));
+      }
+    } catch (error) {
+      console.error("즐겨찾기 변경 실패:", error);
+      alert(
+        error.response?.status === 401
+          ? "로그인이 필요한 기능입니다. 다시 로그인해 주세요."
+          : "즐겨찾기 변경에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    } finally {
+      setFavoriteLoadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(pollId);
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -356,7 +443,8 @@ const PollList = () => {
 
   const destinationCount = destinations?.length ?? 0;
   useEffect(() => {
-    if (destinationCount < 2 || isDestinationHovered || isDestinationFocused) return;
+    if (destinationCount < 2 || isDestinationHovered || isDestinationFocused)
+      return;
 
     const timer = window.setInterval(() => {
       setSlide((current) => (current + 1) % destinationCount);
@@ -368,9 +456,12 @@ const PollList = () => {
   const keyword = (searchParams.get("q") ?? "").trim().toLowerCase();
   const filteredPolls = polls
     .filter((poll) => {
-      const matchesSearch = !keyword
-        || poll.title?.toLowerCase().includes(keyword)
-        || poll.options?.some((option) => option.content?.toLowerCase().includes(keyword));
+      const matchesSearch =
+        !keyword ||
+        poll.title?.toLowerCase().includes(keyword) ||
+        poll.options?.some((option) =>
+          option.content?.toLowerCase().includes(keyword),
+        );
 
       if (!matchesSearch) return false;
 
@@ -411,11 +502,17 @@ const PollList = () => {
           <RankingPanel aria-labelledby="weekly-ranking-title">
             <PanelTitle id="weekly-ranking-title">주간랭킹</PanelTitle>
             {rankingError ? (
-              <PanelMessage role="status">주간랭킹을 불러오지 못했어요.</PanelMessage>
+              <PanelMessage role="status">
+                주간랭킹을 불러오지 못했어요.
+              </PanelMessage>
             ) : ranking === null ? (
-              <PanelMessage role="status">주간랭킹을 불러오는 중이에요.</PanelMessage>
+              <PanelMessage role="status">
+                주간랭킹을 불러오는 중이에요.
+              </PanelMessage>
             ) : ranking.length === 0 ? (
-              <PanelMessage role="status">아직 이번 주에 집계된 표가 없어요.</PanelMessage>
+              <PanelMessage role="status">
+                아직 이번 주에 집계된 표가 없어요.
+              </PanelMessage>
             ) : (
               <RankingList role="list">
                 {ranking.map(({ pollId, title, voteCount }, index) => (
@@ -425,7 +522,9 @@ const PollList = () => {
                     </RankMarker>
                     <RankingLink to={`/votes/${pollId}`}>
                       <RankingTitle title={title}>{title}</RankingTitle>
-                      <RankingVoteCount>{voteCount.toLocaleString("ko-KR")}표</RankingVoteCount>
+                      <RankingVoteCount>
+                        {voteCount.toLocaleString("ko-KR")}표
+                      </RankingVoteCount>
                     </RankingLink>
                   </RankingItem>
                 ))}
@@ -453,25 +552,33 @@ const PollList = () => {
                       <DestinationImage src={destination.imageUrl} alt="" />
                     )}
                     <DestinationCaption>
-                      <DestinationHeading id={index === slide ? "destinations-title" : undefined}>
+                      <DestinationHeading
+                        id={index === slide ? "destinations-title" : undefined}
+                      >
                         이번 주 인기 여행지
                       </DestinationHeading>
-                      <DestinationName title={destination.name}>{destination.name}</DestinationName>
+                      <DestinationName title={destination.name}>
+                        {destination.name}
+                      </DestinationName>
                     </DestinationCaption>
                   </DestinationLink>
                 ))}
               </DestinationSlides>
             ) : (
               <>
-                <PanelTitle id="destinations-title">이번 주 인기 여행지</PanelTitle>
+                <PanelTitle id="destinations-title">
+                  이번 주 인기 여행지
+                </PanelTitle>
                 <PanelMessage role="status">
-                  {destinationsError ? "여행지를 불러오지 못했어요." :
-                    destinations === null ? "여행지를 불러오는 중이에요." : "아직 이번 주에 집계된 여행지가 없어요."}
+                  {destinationsError
+                    ? "여행지를 불러오지 못했어요."
+                    : destinations === null
+                      ? "여행지를 불러오는 중이에요."
+                      : "아직 이번 주에 집계된 여행지가 없어요."}
                 </PanelMessage>
               </>
             )}
           </DestinationsPanel>
-
         </Sidebar>
 
         <PollArea aria-label="투표 목록">
@@ -513,7 +620,15 @@ const PollList = () => {
 
           <PollGrid>
             {filteredPolls.map((poll) => (
-              <PollItem key={poll.pollId} poll={poll} />
+              <PollItem
+                key={poll.pollId}
+                poll={poll}
+                isNew={pollRegistrationDate(poll.regDate) === today}
+                isFavorite={favoriteIds.has(Number(poll.pollId))}
+                onToggleFavorite={handleToggleFavorite}
+                favoriteLoading={favoriteLoadingIds.has(poll.pollId)}
+                isLoggedIn={isLoggedIn}
+              />
             ))}
           </PollGrid>
           {keyword && filteredPolls.length === 0 && (

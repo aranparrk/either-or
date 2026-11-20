@@ -148,7 +148,7 @@ const AxiosApi = {
 
   // 회원탈퇴
   memberWithdraw: async () => {
-    return await api.delete("/api/auth/withdraw")
+    return await api.delete("/api/auth/withdraw");
   },
 
   // ====================================
@@ -162,9 +162,11 @@ const AxiosApi = {
 
   weeklyRanking: (signal) => api.get("/api/votes/weekly-ranking", { signal }),
 
-  weeklyDestinations: (signal) => api.get("/api/votes/weekly-destinations", { signal }),
+  weeklyDestinations: (signal) =>
+    api.get("/api/votes/weekly-destinations", { signal }),
 
-  searchTourSpots: (keyword) => api.get("/api/tour-spots", { params: { keyword } }),
+  searchTourSpots: (keyword) =>
+    api.get("/api/tour-spots", { params: { keyword } }),
 
   // 투표 상세 조회
   pollDetail: async (id) => {
@@ -175,7 +177,14 @@ const AxiosApi = {
   pollDelete: (id) => api.delete(`/api/votes/${id}`),
 
   // 투표 등록
-  pollCreate: async (title, content, options, deadline, contentImage, tourOptions) => {
+  pollCreate: async (
+    title,
+    content,
+    options,
+    deadline,
+    contentImage,
+    tourOptions,
+  ) => {
     return await api.post("/api/votes", {
       title,
       content,
@@ -238,6 +247,22 @@ const AxiosApi = {
   },
 
   // ====================================
+  // 즐겨찾기 API
+  // ====================================
+
+  // 특정 투표 즐겨찾기 등록
+  favoriteAdd: async (pollId) => api.post(`/api/favorites/${pollId}`),
+
+  // 특정 투표 즐겨찾기 해제
+  favoriteRemove: async (pollId) => api.delete(`/api/favorites/${pollId}`),
+
+  // 특정 투표 즐겨찾기 여부 확인
+  favoriteStatus: async (pollId) => api.get(`/api/favorites/${pollId}/status`),
+
+  // 내가 즐겨찾기한 투표 목록
+  myFavoriteList: async () => api.get("/api/mypage/favorites"),
+
+  // ====================================
   // 마이페이지 API
   // ====================================
 
@@ -267,7 +292,7 @@ const AxiosApi = {
   // 기존 비밀번호 확인
   checkCurrentPwd: async (currentPwd) => {
     return await api.post("/api/member/check-pwd", {
-      currentPwd
+      currentPwd,
     });
   },
 

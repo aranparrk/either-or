@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import styled from "styled-components";
 import AxiosApi from "../../api/AxiosApi";
 import { currentMemberId } from "../../api/currentMemberId";
+import { DeleteDialog, DeleteDialogActions } from "../common/DeleteDialog.js";
+import FormFeedback from "../common/FormFeedback.jsx";
 
 const Item = styled.div`
   padding: 20px 0;
@@ -93,6 +95,9 @@ const ErrorText = styled.p`
 `;
 
 const CommentItem = ({ comment, onDeleted, onUpdated }) => {
+  const dialogId = useId();
+  const deleteDialogRef = useRef(null);
+  const [deleteError, setDeleteError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment.content);
   const [isSaving, setIsSaving] = useState(false);
@@ -125,23 +130,24 @@ const CommentItem = ({ comment, onDeleted, onUpdated }) => {
   };
 
   const handleDelete = async () => {
-    if (isDeleting || isSaving || !window.confirm("댓글을 삭제할까요?")) return;
+    if (isDeleting || isSaving) return;
 
     setIsDeleting(true);
-    setErrorMessage("");
+    setDeleteError("");
     try {
       await AxiosApi.commentDelete(comment.pollId, comment.commentId);
+      deleteDialogRef.current?.close();
       onDeleted(comment.commentId);
     } catch (error) {
       const status = error.response?.status;
       if (status === 401) {
-        setErrorMessage("로그인이 필요합니다. 다시 로그인해주세요.");
+        setDeleteError("로그인이 필요합니다. 다시 로그인해주세요.");
       } else if (status === 403) {
-        setErrorMessage("작성자만 삭제할 수 있습니다.");
+        setDeleteError("작성자만 삭제할 수 있습니다.");
       } else if (status === 404) {
-        setErrorMessage("댓글을 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+        setDeleteError("댓글을 찾을 수 없습니다. 페이지를 새로고침해주세요.");
       } else {
-        setErrorMessage("댓글 삭제에 실패했습니다. 다시 시도해주세요.");
+        setDeleteError("댓글 삭제에 실패했습니다. 다시 시도해주세요.");
       }
     } finally {
       setIsDeleting(false);
@@ -181,7 +187,10 @@ const CommentItem = ({ comment, onDeleted, onUpdated }) => {
                   setIsEditing(true);
                 }}>수정</ActionButton>
                 <span aria-hidden="true" style={{ color: "#ccc", alignSelf: "center" }}>·</span>
-                <ActionButton $danger type="button" disabled={isDeleting} onClick={handleDelete}>
+                <ActionButton $danger type="button" disabled={isDeleting} onClick={() => {
+                  setDeleteError("");
+                  deleteDialogRef.current?.showModal();
+                }}>
                   {isDeleting ? "삭제 중..." : "삭제"}
                 </ActionButton>
               </>
@@ -189,6 +198,28 @@ const CommentItem = ({ comment, onDeleted, onUpdated }) => {
           </Actions>
         )}
       </CommentRow>
+      {isAuthor && (
+        <DeleteDialog
+          ref={deleteDialogRef}
+          aria-labelledby={`${dialogId}-title`}
+          aria-describedby={`${dialogId}-description`}
+          onCancel={(event) => {
+            if (isDeleting) event.preventDefault();
+          }}
+        >
+          <h2 id={`${dialogId}-title`}>댓글을 삭제할까요?</h2>
+          <p id={`${dialogId}-description`}>삭제한 댓글은 복구할 수 없어요.</p>
+          <FormFeedback>{deleteError}</FormFeedback>
+          <DeleteDialogActions>
+            <ActionButton type="button" autoFocus disabled={isDeleting} onClick={() => deleteDialogRef.current?.close()}>
+              취소
+            </ActionButton>
+            <ActionButton $danger type="button" disabled={isDeleting} onClick={handleDelete}>
+              {isDeleting ? "삭제 중…" : "삭제하기"}
+            </ActionButton>
+          </DeleteDialogActions>
+        </DeleteDialog>
+      )}
       <DateText>{new Date(comment.regDate).toLocaleString("ko-KR")}</DateText>
       {errorMessage && <ErrorText role="alert">{errorMessage}</ErrorText>}
     </Item>
