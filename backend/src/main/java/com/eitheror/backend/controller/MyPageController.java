@@ -3,9 +3,11 @@ package com.eitheror.backend.controller;
 
 import com.eitheror.backend.dto.MyCommentResDto;
 import com.eitheror.backend.dto.PollListResDto;
+import com.eitheror.backend.dto.FavoriteResDto;
 import com.eitheror.backend.security.SecurityUtil;
 import com.eitheror.backend.service.CommentService;
 import com.eitheror.backend.service.PollService;
+import com.eitheror.backend.service.FavoriteService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +26,7 @@ public class MyPageController {
 
     private final PollService pollService;
     private final CommentService commentService;
+    private final FavoriteService favoriteService;
 
     // 내가 작성한 투표 조회
     @Operation(summary = "투표 조회", description = "내가 쓴 투표 조회")
@@ -51,6 +54,18 @@ public class MyPageController {
         // 내가 작성한 댓글 조회
         List<MyCommentResDto> result =
                 commentService.getMyCommentList(memberId);
+
+        return ResponseEntity.ok(result);
+    }
+
+    // 내가 즐겨찾기한 투표 조회
+    @GetMapping("/favorites")
+    public ResponseEntity<List<FavoriteResDto>> getMyFavorites() {
+
+        Long memberId = SecurityUtil.currentMemberId();
+
+        List<FavoriteResDto> result =
+                favoriteService.getMyFavorites(memberId);
 
         return ResponseEntity.ok(result);
     }
