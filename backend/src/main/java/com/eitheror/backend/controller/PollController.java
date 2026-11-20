@@ -69,4 +69,11 @@ public class PollController {
     public ResponseEntity<List<WeeklyDestinationResDto>> getWeeklyDestinations() {
         return ResponseEntity.ok(pollService.getWeeklyDestinations());
     }
+
+    @Operation(summary = "투표 검색", description = "투표를 검색합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<List<PollListResDto>> searchPolls(@RequestParam String keyword) {
+        return ResponseEntity.ok(pollService.searchPolls(keyword));
+    }
+
 }

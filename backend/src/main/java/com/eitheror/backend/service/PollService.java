@@ -26,11 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -505,5 +501,71 @@ public class PollService {
         } catch (IllegalArgumentException e) {
             return false;
         }
+    }
+
+    // 메인페이지에서 투표 제목 + 내용 + 선택지 통합 검색
+    @Transactional(readOnly = true)
+    public List<PollListResDto> searchPolls(String keyword) {
+        // 검색어가 비어있으면 전체 투표 목록 반환
+        if (keyword == null || keyword.isBlank()) {
+            return getPollList();
+        }
+
+        // 입력된 검색어 앞뒤 공백 제거
+        final String searchKeyword = keyword.trim();
+
+        // 제목 검색
+        List<Poll> titleSearch= pollRepository.findByTitleContainingIgnoreCase(searchKeyword);
+
+        // 제목 검색
+        List<Poll> contentSearch= pollRepository.findByContentContainingIgnoreCase(searchKeyword);
+
+        // 선택지 검색
+        List<PollOption> optionSearch = pollOptionRepository.findByContentContainingIgnoreCase(searchKeyword);
+
+        // 제목 + 내용 + 선택지 검색 결과 통합, 중복 제거
+        Map<Long, Poll> matchedPolls = new LinkedHashMap<>();
+
+        for (Poll poll : titleSearch) {
+            matchedPolls.putIfAbsent(poll.getPollId(), poll);
+        }
+
+        for (Poll poll : contentSearch) {
+            matchedPolls.putIfAbsent(poll.getPollId(), poll);
+        }
+
+        for (PollOption pollOption : optionSearch) {
+            Poll poll = pollOption.getPoll();
+            matchedPolls.putIfAbsent(poll.getPollId(), poll);
+        }
+
+        // 제목으로 검색된 투표 게시글의 선택지 가져오기
+        List<Poll> polls = new ArrayList<>(matchedPolls.values());
+        List<Long> pollIds = polls.stream().map(Poll::getPollId).toList();
+
+        // 검색 결과가 없다면 빈 목록 반환
+        if (pollIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 검색된 투표의 선택지 조회
+        Map<Long, List<PollOptionResDto>> optionsByPollId =
+                pollOptionRepository
+                        .findByPoll_PollIdInOrderByOptionIdAsc(pollIds)
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                option -> option.getPoll().getPollId(),
+                                Collectors.mapping(PollService::toOptionDto, Collectors.toList())
+                        ));
+
+        // 투표 목록 → DTO
+        List<PollListResDto> result = new ArrayList<>();
+        for (Poll poll : polls) {
+            PollListResDto dto = toDto(poll);
+            dto.setOptions(optionsByPollId.getOrDefault(poll.getPollId(), List.of())
+            );
+            result.add(dto);
+        }
+        return result;
     }
 }

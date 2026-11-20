@@ -24,6 +24,10 @@ public interface PollRepository extends JpaRepository<Poll, Long> {
     // 내가 작성한 투표를 최신순으로 조회
     List<Poll> findByMember_MemberIdOrderByRegDateDesc(Long memberId);
 
+    // 투표 제목 + 내용 검색
+    List<Poll> findByTitleContainingIgnoreCase(String keyword);
+    List<Poll> findByContentContainingIgnoreCase(String keyword);
+
     // 회원 탈퇴시 회원이 작성한 모든 게시글 삭제
     @Modifying
     @Query("""
