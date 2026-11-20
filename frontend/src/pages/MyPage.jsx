@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import styled from "styled-components";
 import AxiosApi from "../api/AxiosApi";
 import EditMember from "../components/myPage/EditMember.jsx";
-import Withdraw from "../components/myPage/Withdraw.jsx"
+import Withdraw from "../components/myPage/Withdraw.jsx";
 
 // 전체 영역
 const Container = styled.div`
@@ -150,6 +150,9 @@ const MyPage = () => {
   // 내가 작성한 댓글
   const [myComments, setMyComments] = useState([]);
 
+  // 내가 즐겨찾기한 투표
+  const [myFavorites, setMyFavorites] = useState([]);
+
   // 로딩 상태
   const [loading, setLoading] = useState(false);
 
@@ -237,6 +240,34 @@ const MyPage = () => {
     };
   }, [activeTab]);
 
+  // 내가 즐겨찾기한 투표 조회
+  useEffect(() => {
+    if (activeTab !== "favorite") return;
+
+    let isMounted = true;
+
+    const getMyFavorites = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await AxiosApi.myFavoriteList();
+        if (isMounted) setMyFavorites(response.data ?? []);
+      } catch (error) {
+        console.error("즐겨찾기 목록 조회 실패:", error);
+        if (isMounted) setError("즐겨찾기 목록을 불러오지 못했습니다.");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    getMyFavorites();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab]);
+
   return (
     <Container>
       <Title>마이페이지</Title>
@@ -264,6 +295,13 @@ const MyPage = () => {
           onClick={() => setActiveTab("comment")}
         >
           내가 쓴 댓글
+        </MenuBtn>
+
+        <MenuBtn
+          $active={activeTab === "favorite"}
+          onClick={() => setActiveTab("favorite")}
+        >
+          즐겨찾기
         </MenuBtn>
       </Menu>
 
@@ -336,6 +374,61 @@ const MyPage = () => {
                       <ItemText>{comment.content}</ItemText>
 
                       <ItemDate>작성일: {formatDate(comment.regDate)}</ItemDate>
+                    </ItemCard>
+                  ))}
+                </ItemList>
+              </>
+            )}
+          </>
+        )}
+
+        {/* 내가 즐겨찾기한 투표 */}
+        {activeTab === "favorite" && (
+          <>
+            <SectionTitle>내 즐겨찾기</SectionTitle>
+
+            {loading ? (
+              <EmptyMessage>즐겨찾기 목록을 불러오는 중입니다.</EmptyMessage>
+            ) : error ? (
+              <EmptyMessage>{error}</EmptyMessage>
+            ) : myFavorites.length === 0 ? (
+              <EmptyMessage>
+                아직 즐겨찾기한 투표가 없습니다.
+                <br />
+                투표 목록에서 별(☆) 버튼을 눌러 저장해 보세요.
+              </EmptyMessage>
+            ) : (
+              <>
+                <Count>총 {myFavorites.length}개의 즐겨찾기</Count>
+
+                <ItemList>
+                  {myFavorites.map((favorite) => (
+                    <ItemCard
+                      key={favorite.favoriteId}
+                      to={`/votes/${favorite.pollId}`}
+                    >
+                      <ItemTitle>
+                        <span style={{ color: "#d69b00", marginRight: 7 }}>
+                          ★
+                        </span>
+                        {favorite.title}
+                      </ItemTitle>
+
+                      <ItemDate>
+                        즐겨찾기한 날짜: {formatDate(favorite.regDate)}
+                      </ItemDate>
+
+                      <ItemDate>
+                        {" "}
+                        투표 참여자: {favorite.totalVotes ?? 0}명
+                      </ItemDate>
+
+                      {favorite.deadline && (
+                        <ItemDate>
+                          {" "}
+                          마감일: {formatDate(favorite.deadline)}
+                        </ItemDate>
+                      )}
                     </ItemCard>
                   ))}
                 </ItemList>
