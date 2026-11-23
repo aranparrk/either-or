@@ -33,6 +33,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final SocialAccountRepository socialAccountRepository;
     private final VoteRepository voteRepository;
+    private final FavoriteRepository favoriteRepository;
     private final CommentRepository commentRepository;
     private final PollOptionRepository pollOptionRepository;
     private final PollRepository pollRepository;
@@ -246,16 +247,19 @@ public class AuthService {
         // 3.회원이 참여한 모든 투표, 회원 게시글에 참여된 모든 투표 정보 삭제
         voteRepository.deleteAllByMemberIdForWithdrawal(memberId);
 
-        // 4.회원이 작성한 모든 댓글, 회원 게시글에 달린 모든 댓글 정보 삭제
+        // 4.회원이 누른 모든 즐겨찾기, 회원이 작성한 게시글의 즐겨찾기 정보 삭제
+        favoriteRepository.deleteAllByMemberIdForWithdrawal(memberId);
+
+        // 5.회원이 작성한 모든 댓글, 회원 게시글에 달린 모든 댓글 정보 삭제
         commentRepository.deleteAllByMemberIdForWithdrawal(memberId);
 
-        // 5.회원이 작성한 게시글의 모든 선택지 정보 삭제
+        // 6.회원이 작성한 게시글의 모든 선택지 정보 삭제
         pollOptionRepository.deleteAllByMemberIdForWithdrawal(memberId);
 
-        // 6.회원이 작성한 모든 게시글 삭제
+        // 7.회원이 작성한 모든 게시글 삭제
         pollRepository.deleteAllByMemberIdForWithdrawal(memberId);
 
-        // 7.회원 정보 삭제
+        // 8.회원 정보 삭제
         memberRepository.delete(member);
     }
 
