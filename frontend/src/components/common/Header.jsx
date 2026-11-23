@@ -181,7 +181,13 @@ const Header = () => {
   const onSearch = (event) => {
     event.preventDefault();
     const query = new FormData(event.currentTarget).get("q").trim();
-    nav(query ? { pathname: "/", search: new URLSearchParams({ q: query }).toString() } : "/");
+    window.dispatchEvent(new Event("resetPollFilter"))
+
+    if (!query) {
+    nav("/");
+    return;
+    }
+    nav({ pathname: "/", search: new URLSearchParams({ q: query }).toString() });
   };
 
   // 페이지 이동 시 변경된 로그인 정보를 반영
@@ -279,8 +285,8 @@ const Header = () => {
             defaultValue={searchQuery}
             name="q"
             type="search"
-            aria-label="투표 제목 또는 여행지 검색"
-            placeholder="투표 제목 또는 여행지 검색"
+            aria-label="투표 제목, 내용 또는 여행지 검색"
+            placeholder="투표 제목, 내용 또는 여행지 검색"
           />
           <SearchButton type="submit">검색</SearchButton>
         </HeaderSearch>

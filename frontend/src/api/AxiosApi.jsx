@@ -195,6 +195,15 @@ const AxiosApi = {
     });
   },
 
+  // 투표 검색
+  pollSearch: async (keyword) => {
+    return await api.get("/api/votes/search", {
+      params: {
+        keyword: keyword
+      }
+    });
+  },
+
   // ====================================
   // 투표 참여 API
   // ====================================

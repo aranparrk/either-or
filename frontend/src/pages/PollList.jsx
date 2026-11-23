@@ -347,14 +347,49 @@ const PollList = () => {
     return () => window.clearTimeout(timer);
   }, [today]);
 
+  // 투표 제목+내용+선택지 검색
+  const keyword = (searchParams.get("q") ?? "").trim().toLowerCase();
   useEffect(() => {
-    AxiosApi.pollList()
-      .then((response) => {
-        setPolls(response.data);
-      })
-      .catch((error) => {
-        console.error("투표 목록 조회 실패 : ", error);
-      });
+    // 검색 결과를 가져오는 중 화면이 이동했는지 확인
+    let isMounted = true;
+
+    const getPolls = async () => {
+      try {
+        let response;
+
+        if (keyword) {
+          response = await AxiosApi.pollSearch(keyword);
+        } else {
+          response = await AxiosApi.pollList();
+        }
+
+        if (isMounted) {
+          setPolls(response.data);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("투표 목록 조회 실패:", error)
+        }
+      }
+    };
+    getPolls();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [keyword]);
+
+  // 재검색시 필터 및 정렬 초기화
+  useEffect(() => {
+    const resetFilter = () => {
+      setFilter("all");
+      setSort("latest")
+    };
+    window.addEventListener("resetPollFilter", resetFilter)
+
+    return () => {
+      window.removeEventListener("resetPollFilter", resetFilter)
+    };
   }, []);
 
   // 로그인한 사용자의 기존 즐겨찾기 상태를 서버에서 불러옵니다.
@@ -453,18 +488,8 @@ const PollList = () => {
     return () => window.clearInterval(timer);
   }, [destinationCount, isDestinationHovered, isDestinationFocused]);
 
-  const keyword = (searchParams.get("q") ?? "").trim().toLowerCase();
   const filteredPolls = polls
     .filter((poll) => {
-      const matchesSearch =
-        !keyword ||
-        poll.title?.toLowerCase().includes(keyword) ||
-        poll.options?.some((option) =>
-          option.content?.toLowerCase().includes(keyword),
-        );
-
-      if (!matchesSearch) return false;
-
       const isClosed = new Date(poll.deadline) <= new Date();
 
       if (filter === "ongoing") {
@@ -488,15 +513,18 @@ const PollList = () => {
   return (
     <PageContainer>
       <PageGrid>
-        <CoverArea>
-          <TravelCover
-            wide
-            title="다음 여행지는 어디로 갈까요?"
-            description="두 여행지를 비교하고, 가고 싶은 곳에 한 표를 남겨보세요."
-          >
-            <CreatePollLink to="/votes/new">여행지 투표 만들기</CreatePollLink>
-          </TravelCover>
-        </CoverArea>
+        {/* 검색시에는 투표 만들기 생략 */}
+        {!keyword && (
+          <CoverArea>
+            <TravelCover
+              wide
+              title="다음 여행지는 어디로 갈까요?"
+              description="두 여행지를 비교하고, 가고 싶은 곳에 한 표를 남겨보세요."
+            >
+              <CreatePollLink to="/votes/new">여행지 투표 만들기</CreatePollLink>
+            </TravelCover>
+          </CoverArea>
+        )}
 
         <Sidebar aria-label="투표 도구">
           <RankingPanel aria-labelledby="weekly-ranking-title">
