@@ -7,6 +7,10 @@ import FormFeedback from "../common/FormFeedback.jsx";
 import ChangeProfile from "./ChangeProfile.jsx";
 import ChangePwd from "./ChangePwd.jsx";
 
+// 비밀번호: 8~20자, 영문 + 숫자 + 특수문자
+const PWD_REGEX =
+  /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,20}$/;
+
 const Form = styled.div`
   max-width: 450px;
   margin: 0 auto;
@@ -14,7 +18,7 @@ const Form = styled.div`
 `;
 
 const NicknameSection = styled.section`
-  margin-bottom: 36px;
+  margin-bottom: 60px;
 `;
 
 const SectionTitle = styled.h3`
@@ -30,6 +34,8 @@ const EditMember = () => {
     const [savedNickname, setSavedNickname] = useState(null);
     const [nicknameError, setNicknameError] = useState("");
     const [currentPwd, setCurrentPwd] = useState("");
+    const [currentPwdValid, setCurrentPwdValid] = useState(null);
+    const [isCurrentPwd, setIsCurrentPwd] = useState(false);
     const [newPwd, setNewPwd] = useState("");
     const [confirmPwd, setConfirmPwd] = useState("");
     const [profileId, setProfileId] = useState(
@@ -59,6 +65,11 @@ const EditMember = () => {
         return () => controller.abort();
     }, []);
 
+    const isPwd = PWD_REGEX.test(newPwd);
+    const isPwdSame =
+        currentPwd.length > 0 && newPwd.length > 0 && newPwd === currentPwd;
+    const isPwdConfirm =
+        confirmPwd.length > 0 && newPwd === confirmPwd;
     const trimmedNickname = nickname.trim();
     const nicknameChanged = savedNickname !== null && trimmedNickname !== savedNickname;
     const nicknameFeedback = nicknameChanged && !trimmedNickname
@@ -82,6 +93,30 @@ const EditMember = () => {
     // 프로필을 변경 여부 확인
     const profileChange = profileChanged;
 
+    // 기존 비밀번호 입력 후 0.5초 뒤 확인
+    useEffect(() => {
+        if (!currentPwd) {
+            return;
+        }
+
+        // 0.5초 기다린 후 서버에 확인 요청
+        const timer = setTimeout(async () => {
+            setIsCurrentPwd(true);
+            setCurrentPwdValid(null);
+
+            try {
+                const response = await AxiosApi.checkCurrentPwd(currentPwd);
+                setCurrentPwdValid(response.data === true);
+            } catch (error) {
+                console.error("기존 비밀번호 확인 실패 ", error);
+                setCurrentPwdValid(false);
+            } finally {
+                setIsCurrentPwd(false);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [currentPwd]);
+
     // 회원 정보 변경
     const handleMemberUpdate = async () => {
         if (isSaving || (nicknameChanged && !trimmedNickname)) return;
@@ -92,37 +127,49 @@ const EditMember = () => {
         // 비밀번호를 변경 여부 확인
         const pwdChange = currentPwd || newPwd || confirmPwd;
 
-        if (pwdChange) {
-            // 비밀번호 입력칸 확인
-            if (!currentPwd || !newPwd || !confirmPwd) {
-                setSaveError("비밀번호 입력칸을 모두 작성해 주세요.");
-                return;
-            }
-
-             // 기존 비밀번호 확인
-            const checkCurrentPwd = await AxiosApi.checkCurrentPwd(currentPwd);
-
-            if (checkCurrentPwd.data !== true) {
-                setSaveError("기존 비밀번호가 일치하지 않습니다.");
-                return;
-            }
-
-            // 새 비밀번호와 새비밀번호 확인 일치 확인
-            if (newPwd !== confirmPwd) {
-                setSaveError("새 비밀번호가 일치하지 않습니다.");
-                return;
-            }
-        }
-
-        // 변경할 정보가 있는지 확인
-        if (!pwdChange && !profileChange && !nicknameChanged) return;
-
-        // 회원 정보 변경 요청
         try {
             setIsSaving(true);
-            const response = await AxiosApi.memberUpdate(
 
-                // 비밀번호만 변경하거나 프로필만 변경 가능
+            if (pwdChange) {
+                // 비밀번호 입력칸 확인
+                if (!currentPwd || !newPwd || !confirmPwd) {
+                    setSaveError("비밀번호 입력칸을 모두 작성해 주세요.");
+                    return;
+                }
+
+                 // 기존 비밀번호 확인
+                const checkCurrentPwd = await AxiosApi.checkCurrentPwd(currentPwd);
+
+                if (checkCurrentPwd.data !== true) {
+                    setSaveError("기존 비밀번호를 다시 확인해주세요.");
+                    return;
+                }
+
+                // 새 비밀번호 유효성 검사
+                if (!PWD_REGEX.test(newPwd)) {
+                    setSaveError("새 비밀번호를 다시 확인해주세요.");
+                    return;
+                }
+
+                // 새 비밀번호가 기존 비밀번호와 다른지 검사
+                if (currentPwd === newPwd) {
+                    setSaveError("새 비밀번호는 기존 비밀번호와 다르게 입력해 주세요.");
+                    return;
+                }
+
+                // 새 비밀번호가 일치하는지 검사
+                if (newPwd !== confirmPwd) {
+                    setSaveError("새 비밀번호 확인을 다시 확인해주세요.");
+                    return;
+                }
+            }
+
+            // 변경할 정보가 있는지 확인
+            if (!pwdChange && !profileChange && !nicknameChanged) return;
+
+            // 회원 정보 변경 요청
+            const response = await AxiosApi.memberUpdate(
+                // 프로필, 닉네임, 비밀번호 각자 따로 변경 가능
                 pwdChange ? currentPwd : undefined,
                 pwdChange ? newPwd : undefined,
                 profileChanged && imageUrl ? imageUrl : undefined,
@@ -138,6 +185,7 @@ const EditMember = () => {
                 setNewPwd("");
                 setConfirmPwd("");
 
+                // 닉네임 변경 저장
                 if (nicknameChanged) {
                     setNickname(trimmedNickname);
                     setSavedNickname(trimmedNickname);
@@ -154,6 +202,7 @@ const EditMember = () => {
                     setProfileChanged(false);
                 }
 
+                // 해더에 변경 닉네임, 프로필 갱신
                 if (nicknameChanged || profileChanged) {
                     window.dispatchEvent(new Event("authChanged"));
                 }
@@ -203,10 +252,17 @@ const EditMember = () => {
             <ChangePwd
                 currentPwd={currentPwd}
                 setCurrentPwd={setCurrentPwd}
+                currentPwdValid={currentPwdValid}
+                setCurrentPwdValid={setCurrentPwdValid}
+                isCurrentPwd={isCurrentPwd}
+                setIsCurrentPwd={setIsCurrentPwd}
                 newPwd={newPwd}
                 setNewPwd={setNewPwd}
                 confirmPwd={confirmPwd}
                 setConfirmPwd={setConfirmPwd}
+                isPwd={isPwd}
+                isPwdSame={isPwdSame}
+                isPwdConfirm={isPwdConfirm}
             />
             <FormFeedback>{saveError}</FormFeedback>
             {saved && <FormFeedback error={false}>회원 정보를 저장했습니다.</FormFeedback>}
