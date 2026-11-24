@@ -1,11 +1,13 @@
 package com.eitheror.backend.controller;
 
+import com.eitheror.backend.dto.TourDetailResDto;
 import com.eitheror.backend.dto.TourResDto;
 import com.eitheror.backend.service.TourService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,5 +28,11 @@ public class TourController {
     @GetMapping("/api/tour-spots")
     public List<TourResDto> search(@RequestParam("keyword") String keyword) {
         return tourService.search(keyword);
+    }
+
+    @Operation(summary = "관광지 상세 조회", description = "관광지 ID로 상세 정보를 조회합니다.")
+    @GetMapping("/api/tour-spots/{contentId}")
+    public TourDetailResDto getDetail(@PathVariable String contentId) {
+        return tourService.getDetail(contentId);
     }
 }

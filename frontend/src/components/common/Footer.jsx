@@ -9,15 +9,19 @@ const FooterContainer = styled.footer`
 `;
 
 const FooterInner = styled.div`
-  max-width: 1200px;
+  max-width: 1500px;
   height: 100%;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 clamp(24px, 3vw, 44px);
   box-sizing: border-box;
 
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  @media (max-width: 768px) {
+    padding: 0 16px;
+  }
 `;
 
 const FooterText = styled.span`

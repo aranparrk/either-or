@@ -154,6 +154,38 @@ const PanelMessage = styled.p`
   line-height: 1.5;
 `;
 
+const EmptyState = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e2ebe5;
+  border-radius: 12px;
+  background: #f6f9f7;
+  box-sizing: border-box;
+`;
+
+const EmptyStateIcon = styled.span`
+  display: grid;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e4f0e9;
+  color: #205c50;
+  font-size: 18px;
+`;
+
+const EmptyStateText = styled.p`
+  margin: 0;
+  color: #52645b;
+  font-size: 13px;
+  line-height: 1.55;
+`;
+
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 
 const RankingList = styled.ol`
@@ -538,9 +570,12 @@ const PollList = () => {
                 주간랭킹을 불러오는 중이에요.
               </PanelMessage>
             ) : ranking.length === 0 ? (
-              <PanelMessage role="status">
-                아직 이번 주에 집계된 표가 없어요.
-              </PanelMessage>
+              <EmptyState role="status">
+                <EmptyStateIcon aria-hidden="true">🏆</EmptyStateIcon>
+                <EmptyStateText>
+                  이번 주 투표가 모이면 인기 투표를 보여드릴게요.
+                </EmptyStateText>
+              </EmptyState>
             ) : (
               <RankingList role="list">
                 {ranking.map(({ pollId, title, voteCount }, index) => (
@@ -597,13 +632,22 @@ const PollList = () => {
                 <PanelTitle id="destinations-title">
                   이번 주 인기 여행지
                 </PanelTitle>
-                <PanelMessage role="status">
-                  {destinationsError
-                    ? "여행지를 불러오지 못했어요."
-                    : destinations === null
-                      ? "여행지를 불러오는 중이에요."
-                      : "아직 이번 주에 집계된 여행지가 없어요."}
-                </PanelMessage>
+                {destinationsError ? (
+                  <PanelMessage role="status">
+                    여행지를 불러오지 못했어요.
+                  </PanelMessage>
+                ) : destinations === null ? (
+                  <PanelMessage role="status">
+                    여행지를 불러오는 중이에요.
+                  </PanelMessage>
+                ) : (
+                  <EmptyState role="status">
+                    <EmptyStateIcon aria-hidden="true">📍</EmptyStateIcon>
+                    <EmptyStateText>
+                      여행지 투표가 쌓이면 가장 많이 선택된 곳을 소개할게요.
+                    </EmptyStateText>
+                  </EmptyState>
+                )}
               </>
             )}
           </DestinationsPanel>
