@@ -348,12 +348,6 @@ const ResultDot = styled.span`
   background-color: ${({ $second }) => RESULT_COLORS[$second ? 1 : 0]};
 `;
 
-const VoteHint = styled.p`
-  margin: 10px 0 0;
-  color: #59605e;
-  font-size: 13px;
-`;
-
 const WinnerBadge = styled.span`
   display: inline-block;
   margin-left: 8px;
@@ -802,7 +796,6 @@ const PollDetail = () => {
                 </ResultBarLabels>
               </ResultBar>
             )}
-            {hasResultView && !isClosed && <VoteHint>다른 선택지를 누르면 투표가 변경됩니다.</VoteHint>}
             {pendingOptionId !== null && <Notice role="status">투표 처리 중…</Notice>}
             {hasResultView && resultError && pendingOptionId === null && (
               <Notice role="status">{resultError}</Notice>
