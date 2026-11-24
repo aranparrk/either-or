@@ -13,7 +13,6 @@ import com.eitheror.backend.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -142,7 +141,7 @@ public class PollService {
         Poll savedPoll = pollRepository.save(poll);
 
         // 선택지 응답 DTO 리스트
-        List<PollOptionResDto> optionDtos = new ArrayList<>();
+        List<PollOptionResDto> optionDto = new ArrayList<>();
 
         // 선택지 2개 저장
         for (int i = 0; i < pollCreateReqDto.getOptions().size(); i++) {
@@ -155,7 +154,7 @@ public class PollService {
             }
 
             PollOption savedOption = pollOptionRepository.save(option);
-            optionDtos.add(toOptionDto(savedOption));
+            optionDto.add(toOptionDto(savedOption));
         }
 
         // 응답 DTO 생성
@@ -163,7 +162,7 @@ public class PollService {
         resDto.setPollId(savedPoll.getPollId());
         resDto.setTitle(savedPoll.getTitle());
         resDto.setContent(savedPoll.getContent());
-        resDto.setOptions(optionDtos);
+        resDto.setOptions(optionDto);
         resDto.setDeadline(savedPoll.getDeadline());
         resDto.setContentImage(savedPoll.getContentImage());
 
@@ -505,57 +504,76 @@ public class PollService {
 
     // 메인페이지에서 투표 제목 + 내용 + 선택지 통합 검색
     @Transactional(readOnly = true)
-    public List<PollListResDto> searchPolls(String keyword) {
-        // 검색어가 비어있으면 전체 투표 목록 반환
+    public PollSearchResDto searchPolls(String keyword, String filter) {
+
+        // 검색어가 공란이면 검색하지 않음
         if (keyword == null || keyword.isBlank()) {
-            return getPollList();
+            throw new IllegalArgumentException("검색어를 입력해주세요.");
         }
 
-        // 입력된 검색어 앞뒤 공백 제거
+        // 입력된 검색어 공백 제거
         final String searchKeyword = keyword.trim();
 
         // 제목 검색
         List<Poll> titleSearch= pollRepository.findByTitleContainingIgnoreCase(searchKeyword);
 
-        // 제목 검색
+        // 내용 검색
         List<Poll> contentSearch= pollRepository.findByContentContainingIgnoreCase(searchKeyword);
 
         // 선택지 검색
         List<PollOption> optionSearch = pollOptionRepository.findByContentContainingIgnoreCase(searchKeyword);
 
+        // 선택지 검색 결과를 게시글 단위로 중복 제거
+        Map<Long, Poll> pollOptionSearch = new LinkedHashMap<>();
+
+        for (PollOption option : optionSearch) {
+            Poll poll = option.getPoll();
+            pollOptionSearch.putIfAbsent(poll.getPollId(), poll);
+        }
+
         // 제목 + 내용 + 선택지 검색 결과 통합, 중복 제거
-        Map<Long, Poll> matchedPolls = new LinkedHashMap<>();
+        Map<Long, Poll> totalSearch = new LinkedHashMap<>();
 
         for (Poll poll : titleSearch) {
-            matchedPolls.putIfAbsent(poll.getPollId(), poll);
+            totalSearch.putIfAbsent(poll.getPollId(), poll);
         }
 
         for (Poll poll : contentSearch) {
-            matchedPolls.putIfAbsent(poll.getPollId(), poll);
+            totalSearch.putIfAbsent(poll.getPollId(), poll);
         }
 
         for (PollOption pollOption : optionSearch) {
             Poll poll = pollOption.getPoll();
-            matchedPolls.putIfAbsent(poll.getPollId(), poll);
+            totalSearch.putIfAbsent(poll.getPollId(), poll);
         }
 
-        // 제목으로 검색된 투표 게시글의 선택지 가져오기
-        List<Poll> polls = new ArrayList<>(matchedPolls.values());
-        List<Long> pollIds = polls.stream().map(Poll::getPollId).toList();
+        // 선택한 필터에 따라 검색 결과 목록 출력
+        List<Poll> polls = switch (filter.trim().toUpperCase()) {
+            case "TITLE" -> titleSearch;
+            case "CONTENT" -> contentSearch;
+            case "DESTINATION" -> new ArrayList<>(pollOptionSearch.values());
+            case "ALL" -> new ArrayList<>(totalSearch.values());
+            default -> throw new IllegalArgumentException("잘못된 검색 필터입니다.");
+        };
 
-        // 검색 결과가 없다면 빈 목록 반환
-        if (pollIds.isEmpty()) {
-            return List.of();
-        }
+        // 검색된 게시글 ID 추출
+        List<Long> pollIds = polls.stream()
+                .map(Poll::getPollId)
+                .toList();
 
-        // 검색된 투표의 선택지 조회
+        // 검색된 선택지를 게시글 ID별로 분류
         Map<Long, List<PollOptionResDto>> optionsByPollId =
-                pollOptionRepository
+                pollIds.isEmpty()
+                        ? Map.of()
+                        : pollOptionRepository
                         .findByPoll_PollIdInOrderByOptionIdAsc(pollIds)
                         .stream()
                         .collect(Collectors.groupingBy(
                                 option -> option.getPoll().getPollId(),
-                                Collectors.mapping(PollService::toOptionDto, Collectors.toList())
+                                Collectors.mapping(
+                                        PollService::toOptionDto,
+                                        Collectors.toList()
+                                )
                         ));
 
         // 투표 목록 → DTO
@@ -566,6 +584,14 @@ public class PollService {
             );
             result.add(dto);
         }
-        return result;
+
+        // 검색 결과 개수와 게시글 목록 반환
+        return new PollSearchResDto(
+                totalSearch.size(),
+                titleSearch.size(),
+                contentSearch.size(),
+                pollOptionSearch.size(),
+                result
+        );
     }
 }
