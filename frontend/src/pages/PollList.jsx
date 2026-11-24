@@ -303,6 +303,38 @@ const SortSelect = styled.select`
   cursor: pointer;
 `;
 
+// 상단 필터 버튼
+const SearchFilterButton = styled.button`
+  padding: 8px 25px;
+  border: 1px solid ${({ $active }) => ($active ? "#74afa3" : "#e0e9e4")};
+  border-radius: 8px 8px 0 0;
+  background-color: ${({ $active }) => ($active ? "#74afa3" : "#fff")};
+  color: ${({ $active }) => ($active ? "#fff" : "#777")};
+  font-size: 13px;
+  cursor: pointer;
+`;
+
+// 검색 결과 영역
+const SearchResultArea = styled.div`
+  margin-bottom: 16px;
+  border-bottom: 2px solid #74afa3;
+`;
+
+// 검색 결과 개수
+const SearchResultCnt = styled.p`
+  margin: 0 0 10px;
+  color: #173c35;
+  font-size: 16px;
+  font-weight: 700;
+`;
+
+// 검색 필터 영역
+const SearchFilterBar = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
 const seoulDate = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" });
 
 function pollRegistrationDate(regDate) {
@@ -332,6 +364,8 @@ const PollList = () => {
   const [isDestinationFocused, setIsDestinationFocused] = useState(false);
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("latest");
+  const [searchFilter, setSearchFilter] = useState("ALL");
+  const [searchCnt, setSearchCnt] = useState(null);
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -358,13 +392,27 @@ const PollList = () => {
         let response;
 
         if (keyword) {
-          response = await AxiosApi.pollSearch(keyword);
-        } else {
-          response = await AxiosApi.pollList();
-        }
+          response = await AxiosApi.pollSearch(keyword, searchFilter);
 
-        if (isMounted) {
-          setPolls(response.data);
+          if (isMounted) {
+            // 검색 결과 목록
+            setPolls(response.data.polls ?? []);
+            // 검색 결과 개수
+            setSearchCnt({
+              totalCnt: response.data.totalCnt,
+              titleCnt: response.data.titleCnt,
+              contentCnt: response.data.contentCnt,
+              pollOptionCnt: response.data.pollOptionCnt,
+            });
+          }
+        } else {
+          // 검색어가 없으면 전체 목록 조회
+          response = await AxiosApi.pollList();
+
+          if (isMounted) {
+            setPolls(response.data);
+            setSearchCnt(null);
+          }
         }
       } catch (error) {
         if (isMounted) {
@@ -377,11 +425,12 @@ const PollList = () => {
     return () => {
       isMounted = false;
     };
-  }, [keyword]);
+  }, [keyword, searchFilter]);
 
   // 재검색시 필터 및 정렬 초기화
   useEffect(() => {
     const resetFilter = () => {
+      setSearchFilter("ALL")
       setFilter("all");
       setSort("latest")
     };
@@ -610,6 +659,44 @@ const PollList = () => {
         </Sidebar>
 
         <PollArea aria-label="투표 목록">
+          {/* 검색했을 때만 검색 결과 개수와 검색 필터 표시 */}
+          {keyword && searchCnt && (
+            <SearchResultArea>
+              <SearchResultCnt>
+                총 {searchCnt.totalCnt}개의 검색 결과
+              </SearchResultCnt>
+              <SearchFilterBar>
+                <SearchFilterButton
+                  $active={searchFilter === "ALL"}
+                  onClick={() => setSearchFilter("ALL")}
+                >
+                  전체 {searchCnt.totalCnt}
+                </SearchFilterButton>
+
+                <SearchFilterButton
+                  $active={searchFilter === "TITLE"}
+                  onClick={() => setSearchFilter("TITLE")}
+                >
+                  제목 {searchCnt.titleCnt}
+                </SearchFilterButton>
+
+                <SearchFilterButton
+                  $active={searchFilter === "CONTENT"}
+                  onClick={() => setSearchFilter("CONTENT")}
+                >
+                  내용 {searchCnt.contentCnt}
+                </SearchFilterButton>
+
+                <SearchFilterButton
+                  $active={searchFilter === "DESTINATION"}
+                  onClick={() => setSearchFilter("DESTINATION")}
+                >
+                  여행지 {searchCnt.pollOptionCnt}
+                </SearchFilterButton>
+
+              </SearchFilterBar>
+            </SearchResultArea>
+          )}
           <FilterBar>
             <FilterGroup>
               <FilterButton

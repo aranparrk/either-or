@@ -196,13 +196,10 @@ const AxiosApi = {
   },
 
   // 투표 검색
-  pollSearch: async (keyword) => {
-    return await api.get("/api/votes/search", {
-      params: {
-        keyword: keyword
-      }
-    });
-  },
+  pollSearch: async (keyword, filter = "ALL") =>
+    await api.get("/api/votes/search", {
+      params: { keyword, filter },
+    }),
 
   // ====================================
   // 투표 참여 API
