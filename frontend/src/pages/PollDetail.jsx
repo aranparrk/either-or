@@ -6,7 +6,7 @@ import styled from "styled-components";
 import CommentItem from "../components/comment/CommentItem";
 import Button from "../components/common/Button";
 import FormFeedback from "../components/common/FormFeedback.jsx";
-import { DeleteDialog, DeleteDialogActions } from "../components/common/DeleteDialog.js";
+import { Dialog, DialogActions } from "../components/common/Dialog.js";
 import { Client } from "@stomp/stompjs";
 
 const PageContainer = styled.div`
@@ -270,6 +270,17 @@ const AuthorButton = styled.button`
   }
 `;
 
+const DialogClose = styled(AuthorButton)`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  padding: 0;
+  border: 0;
+  font-size: 22px;
+  line-height: 1;
+`;
+
 const OptionName = styled.span`
   display: block;
   font-size: clamp(16px, 2vw, 20px);
@@ -387,6 +398,7 @@ const PollDetail = () => {
   const { id } = useParams();
   const nav = useNavigate();
   const deleteDialogRef = useRef(null);
+  const voteLoginDialogRef = useRef(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -563,6 +575,10 @@ const PollDetail = () => {
     if (isClosed || voteInFlight.current) {
       return;
     }
+    if (!localStorage.getItem("accessToken") && !localStorage.getItem("refreshToken")) {
+      voteLoginDialogRef.current.showModal();
+      return;
+    }
 
     voteInFlight.current = true;
     setPendingOptionId(optionId);
@@ -698,7 +714,7 @@ const PollDetail = () => {
             </AuthorActions>
           )}
         </TitleRow>
-        <DeleteDialog
+        <Dialog
           ref={deleteDialogRef}
           aria-labelledby="delete-poll-title"
           aria-describedby="delete-poll-description"
@@ -711,7 +727,7 @@ const PollDetail = () => {
             연결된 댓글과 투표 기록도 함께 삭제되며 복구할 수 없어요.
           </p>
           <FormFeedback>{deleteError}</FormFeedback>
-          <DeleteDialogActions>
+          <DialogActions>
             <AuthorButton
               type="button"
               autoFocus
@@ -723,8 +739,8 @@ const PollDetail = () => {
             <AuthorButton $danger type="button" disabled={isDeleting} onClick={handleDelete}>
               {isDeleting ? "삭제 중…" : "삭제하기"}
             </AuthorButton>
-          </DeleteDialogActions>
-        </DeleteDialog>
+          </DialogActions>
+        </Dialog>
 
         <PollMeta>
           {poll.authorNickname && <span>{poll.authorNickname}</span>}
@@ -734,6 +750,16 @@ const PollDetail = () => {
       </PollHeader>
 
       <VoteSection>
+        <Dialog ref={voteLoginDialogRef} aria-labelledby="vote-login-title" aria-describedby="vote-login-description">
+          <DialogClose type="button" aria-label="닫기" onClick={() => voteLoginDialogRef.current.close()}>
+            ×
+          </DialogClose>
+          <h2 id="vote-login-title">로그인이 필요해요</h2>
+          <p id="vote-login-description">투표에 참여하려면 로그인해 주세요.</p>
+          <DialogActions>
+            <AuthorButton type="button" onClick={() => nav("/login")}>로그인하기</AuthorButton>
+          </DialogActions>
+        </Dialog>
         <VoteHeading>
           <SectionTitle>
             {hasResultView ? "투표 결과" : "투표하기"}

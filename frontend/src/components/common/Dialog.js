@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-export const DeleteDialog = styled.dialog`
+export const Dialog = styled.dialog`
   width: min(420px, calc(100% - 32px));
   box-sizing: border-box;
   padding: 24px;
@@ -26,7 +26,7 @@ export const DeleteDialog = styled.dialog`
   }
 `;
 
-export const DeleteDialogActions = styled.div`
+export const DialogActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 8px;
