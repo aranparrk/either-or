@@ -1,41 +1,24 @@
 import { useState } from "react";
-import styled from "styled-components";
+import TravelAuthLayout from "../components/common/TravelAuthLayout.jsx";
 import Button from "../components/common/Button.jsx";
-import Input from "../components/common/Input.jsx";
+import FormFeedback from "../components/common/FormFeedback.jsx";
+import NicknameField from "../components/signup/NicknameField.jsx";
+import { SignupForm, Title, Label } from "../components/signup/signupStyles.js";
+import { useNicknameField } from "../hooks/useSignupField.js";
 import ProfileChoice from "../components/common/ProfileChoice.jsx";
 import { saveLogin } from "../util/auth.jsx";
 import { useNavigate } from "react-router-dom";
 
-const Container = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  padding: 48px 24px;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 400px;
-  padding: 36px;
-  gap: 20px;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  background-color: white;
-`;
-
 const SocialSignUp = () => {
   const [inputProfileId, setInputProfileId] = useState(0);
-  const [nickname, setNickname] = useState("");
+  const nickname = useNicknameField();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [message, setMessage] = useState("");
 
   const nav = useNavigate();
 
-  const canSubmit = inputProfileId >= 1 && inputProfileId <= 5 && Boolean(nickname.trim());
+  const canSubmit = inputProfileId >= 1 && inputProfileId <= 5 && nickname.status === "available";
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -67,12 +50,12 @@ const SocialSignUp = () => {
         },
         body: JSON.stringify({
           profileId: inputProfileId,
-          nickname: nickname.trim(),
+          nickname: nickname.value.trim(),
         }),
       });
 
       if (response.status === 409) {
-        setMessage("이미 사용 중인 닉네임입니다.");
+        nickname.markDuplicate();
         return;
       }
 
@@ -99,35 +82,25 @@ const SocialSignUp = () => {
   };
 
   return (
-    <Container>
-      <Form onSubmit={onSubmit}>
-        <h1>소셜 회원가입</h1>
-        <label htmlFor="social-nickname">닉네임</label>
-        <Input
-          id="social-nickname"
-          autoComplete="nickname"
-          value={nickname}
-          maxLength={20}
-          required
-          onChange={(event) => setNickname(event.target.value)}
-        />
-        <p>사용할 프로필을 선택해 주세요.</p>
-
+    <TravelAuthLayout>
+      <SignupForm onSubmit={onSubmit}>
+        <Title>소셜 회원가입</Title>
+        <NicknameField id="social-nickname" field={nickname} disabled={isSubmitting || completed} />
+        <Label as="p">프로필</Label>
         <ProfileChoice
           onSelect={setInputProfileId}
           selectedId={inputProfileId}
         />
 
+        <FormFeedback>{message}</FormFeedback>
         <Button
           type="submit"
           enabled={canSubmit && !isSubmitting && !completed}
         >
-          {isSubmitting ? "가입 중..." : "가입 완료"}
+          {isSubmitting ? "가입 중…" : "가입 완료"}
         </Button>
-
-        {message && <p role="status">{message}</p>}
-      </Form>
-    </Container>
+      </SignupForm>
+    </TravelAuthLayout>
   );
 };
 
