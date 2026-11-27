@@ -179,6 +179,7 @@ const AxiosApi = {
 
   pollUpdate: (id, data) => api.put(`/api/votes/${id}`, data),
   pollDelete: (id) => api.delete(`/api/votes/${id}`),
+  comparePollDraft: (data) => api.post("/api/votes/compare", data),
 
   // 투표 등록
   pollCreate: async (
