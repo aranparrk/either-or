@@ -2,7 +2,7 @@ import { useId, useRef, useState } from "react";
 import styled from "styled-components";
 import AxiosApi from "../../api/AxiosApi";
 import { currentMemberId } from "../../api/currentMemberId";
-import { DeleteDialog, DeleteDialogActions } from "../common/DeleteDialog.js";
+import { Dialog, DialogActions } from "../common/Dialog.js";
 import FormFeedback from "../common/FormFeedback.jsx";
 
 const Item = styled.div`
@@ -199,7 +199,7 @@ const CommentItem = ({ comment, onDeleted, onUpdated }) => {
         )}
       </CommentRow>
       {isAuthor && (
-        <DeleteDialog
+        <Dialog
           ref={deleteDialogRef}
           aria-labelledby={`${dialogId}-title`}
           aria-describedby={`${dialogId}-description`}
@@ -210,15 +210,15 @@ const CommentItem = ({ comment, onDeleted, onUpdated }) => {
           <h2 id={`${dialogId}-title`}>댓글을 삭제할까요?</h2>
           <p id={`${dialogId}-description`}>삭제한 댓글은 복구할 수 없어요.</p>
           <FormFeedback>{deleteError}</FormFeedback>
-          <DeleteDialogActions>
+          <DialogActions>
             <ActionButton type="button" autoFocus disabled={isDeleting} onClick={() => deleteDialogRef.current?.close()}>
               취소
             </ActionButton>
             <ActionButton $danger type="button" disabled={isDeleting} onClick={handleDelete}>
               {isDeleting ? "삭제 중…" : "삭제하기"}
             </ActionButton>
-          </DeleteDialogActions>
-        </DeleteDialog>
+          </DialogActions>
+        </Dialog>
       )}
       <DateText>{new Date(comment.regDate).toLocaleString("ko-KR")}</DateText>
       {errorMessage && <ErrorText role="alert">{errorMessage}</ErrorText>}
