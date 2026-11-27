@@ -60,6 +60,10 @@ const Message = styled.p`
   text-align: right;
   font-size: 12px;
   color: ${({ $valid }) => ($valid ? "#2e9e4f" : "#e5484d")};
+
+  &[aria-busy="true"] {
+    color: #666;
+  }
 `;
 
 const BackButton = styled.button`
@@ -90,14 +94,59 @@ const LoginLink = styled(Link)`
   text-underline-offset: 3px;
 `;
 
+function useSignupField(checkExists, validate) {
+  const [value, setValue] = useState("");
+  const [status, setStatus] = useState("idle");
+  const lookupValue = value.trim();
+  const valid = validate(lookupValue);
+
+  function changeValue(nextValue) {
+    if (nextValue.trim() !== lookupValue) setStatus("checking");
+    setValue(nextValue);
+  }
+
+  useEffect(() => {
+    if (!valid) return;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await checkExists(lookupValue, controller.signal);
+        if (!controller.signal.aborted) setStatus(data ? "duplicate" : "available");
+      } catch {
+        if (!controller.signal.aborted) setStatus("error");
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [checkExists, lookupValue, valid]);
+
+  return [value, changeValue, valid ? status : "idle", setStatus];
+}
+
+function availabilityMessage(status, available, duplicate) {
+  switch (status) {
+    case "checking": return "중복 확인 중...";
+    case "available": return available;
+    case "duplicate": return duplicate;
+    case "error": return "중복 확인 중 오류가 발생했습니다.";
+    default: return "";
+  }
+}
+
 const SignUp = () => {
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [inputEmail, setInputEmail] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [inputEmail, setInputEmail, emailStatus] = useSignupField(
+    AxiosApi.memberExist, (email) => EMAIL_REGEX.test(email),
+  );
+  const [nickname, setNickname, nicknameStatus, setNicknameStatus] = useSignupField(
+    AxiosApi.nicknameExists, (value) => value.length > 0 && value.length <= 20,
+  );
   const [inputPwd, setInputPwd] = useState("");
   const [inputProfileId, setInputProfileId] = useState(0);
   const [inputPwdConfirm, setInputPwdConfirm] = useState("");
-  const [emailStatus, setEmailStatus] = useState("idle");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState("");
 
@@ -113,56 +162,13 @@ const SignUp = () => {
     setInputProfileId(profileId);
   };
 
-  useEffect(() => {
-    let ignore = false;
-
-    if (!isEmail) {
-      return () => {
-        ignore = true;
-      };
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        if (ignore) return;
-        setEmailStatus("checking");
-
-        const res = await AxiosApi.memberExist(inputEmail);
-        if (ignore) return;
-
-        setEmailStatus(res.data === true ? "duplicate" : "available");
-      } catch (error) {
-        console.error("이메일 중복 확인 실패 ", error);
-        if (!ignore) setEmailStatus("error");
-      }
-    }, 500);
-
-    return () => {
-      ignore = true;
-      clearTimeout(timer);
-    };
-  }, [inputEmail, isEmail]);
-
-  const isEmailOk = isEmail && emailStatus === "available";
-  const isAllValid = isEmailOk && isPwd && isPwdConfirm && isProfileId && Boolean(nickname.trim());
-
-  const getEmailMessage = () => {
-    if (!inputEmail) return "";
-    if (!isEmail) return "이메일 형식이 올바르지 않습니다.";
-
-    switch (emailStatus) {
-      case "checking":
-        return "중복 확인 중...";
-      case "available":
-        return "사용 가능한 이메일입니다.";
-      case "duplicate":
-        return "이미 가입된 이메일입니다.";
-      case "error":
-        return "중복 확인 중 오류가 발생했습니다.";
-      default:
-        return "";
-    }
-  };
+  const isEmailOk = emailStatus === "available";
+  const isNicknameOk = nicknameStatus === "available";
+  const isAllValid = isEmailOk && isNicknameOk && isPwd && isPwdConfirm && isProfileId;
+  const emailMessage = inputEmail && !isEmail ? "이메일 형식이 올바르지 않습니다."
+    : availabilityMessage(emailStatus, "사용 가능한 이메일입니다.", "이미 가입된 이메일입니다.");
+  const nicknameMessage = nickname && !nickname.trim() ? "닉네임을 입력해주세요."
+    : availabilityMessage(nicknameStatus, "사용 가능한 닉네임입니다.", "이미 사용 중인 닉네임입니다.");
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -178,9 +184,11 @@ const SignUp = () => {
         setSignupError("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
       }
     } catch (error) {
-      setSignupError(error.response?.status === 409
-        ? "이미 사용 중인 닉네임입니다."
-        : "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      if (error.response?.status === 409) {
+        setNicknameStatus("duplicate");
+      } else {
+        setSignupError("회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -202,26 +210,48 @@ const SignUp = () => {
         {showEmailForm ? (
           <>
 
-            <Label>이메일</Label>
+            <Label htmlFor="signup-email">이메일</Label>
             <Field>
               <Input
+                id="signup-email"
+                aria-describedby="signup-email-message"
                 type="email"
                 value={inputEmail}
                 placeholder="이메일을 입력해주세요"
                 onChange={(e) => setInputEmail(e.target.value.trim())}
               />
-              <Message $valid={isEmailOk}>{getEmailMessage()}</Message>
+              <Message
+                id="signup-email-message"
+                aria-live="polite"
+                aria-busy={emailStatus === "checking"}
+                $valid={isEmailOk}
+              >
+                {emailMessage}
+              </Message>
             </Field>
 
-            <Label as="label" htmlFor="signup-nickname">닉네임</Label>
-            <Input
-              id="signup-nickname"
-              autoComplete="nickname"
-              value={nickname}
-              maxLength={20}
-              required
-              onChange={(event) => setNickname(event.target.value)}
-            />
+            <Label htmlFor="signup-nickname">닉네임</Label>
+            <Field>
+              <Input
+                id="signup-nickname"
+                autoComplete="nickname"
+                aria-describedby="signup-nickname-message"
+                placeholder="닉네임을 입력해주세요"
+                value={nickname}
+                maxLength={20}
+                required
+                disabled={isSubmitting}
+                onChange={(event) => setNickname(event.target.value)}
+              />
+              <Message
+                id="signup-nickname-message"
+                aria-live="polite"
+                aria-busy={nicknameStatus === "checking"}
+                $valid={isNicknameOk}
+              >
+                {nicknameMessage}
+              </Message>
+            </Field>
 
             <Label>비밀번호</Label>
             <Field>

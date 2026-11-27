@@ -16,6 +16,7 @@ api.interceptors.request.use((config) => {
     "/api/auth/login",
     "/api/auth/signup",
     "/api/auth/reissue",
+    "/api/auth/nickname/exists",
   ].includes(config.url);
 
   if (accessToken && !isPublicAuthRequest) {
@@ -119,9 +120,12 @@ const AxiosApi = {
   // ====================================
 
   // 이메일 중복 확인
-  memberExist: async (email) => {
-    return await api.get(`/api/auth/exists/${encodeURIComponent(email)}`);
+  memberExist: (email, signal) => {
+    return api.get(`/api/auth/exists/${encodeURIComponent(email)}`, { signal });
   },
+
+  nicknameExists: (nickname, signal) =>
+    api.get("/api/auth/nickname/exists", { params: { nickname }, signal }),
 
   // 회원가입
   memberSignup: async (email, pwd, profileId, nickname) => {

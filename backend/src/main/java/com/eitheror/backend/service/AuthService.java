@@ -43,6 +43,11 @@ public class AuthService {
         return memberRepository.existsByEmail(email);
     }
 
+    @Transactional(readOnly = true)
+    public boolean nicknameExists(String nickname) {
+        return memberRepository.existsByNickname(Nicknames.requireValid(nickname));
+    }
+
     // 회원가입
     public boolean signUp(SignUpRequestDto dto) {
 
