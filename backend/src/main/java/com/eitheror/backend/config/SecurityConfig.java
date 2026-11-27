@@ -105,6 +105,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/votes",
+                                "/api/votes/compare",
                                 "/api/votes/*/comments",
                                 "/api/votes/*/choices"
                         ).authenticated()

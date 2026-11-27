@@ -1,9 +1,11 @@
 package com.eitheror.backend.controller;
 
 import com.eitheror.backend.dto.*;
+import com.eitheror.backend.service.PollComparisonService;
 import com.eitheror.backend.service.PollService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,8 @@ import java.util.List;
 public class PollController {
 
     private final PollService pollService;
+    private final PollComparisonService pollComparisonService;
+
 
     @Operation(summary = "투표 전체 조회", description = "등록된 모든 투표를 조회합니다.")
     @GetMapping
@@ -77,5 +81,19 @@ public class PollController {
             @RequestParam(defaultValue = "ALL") String filter
     ) {
         return ResponseEntity.ok(pollService.searchPolls(keyword, filter));
+    }
+
+    @Operation(summary = "투표 비교", description = "AI가 선택지를 비교해줍니다")
+    @PostMapping("/{id}/compare")
+    public ResponseEntity<PollComparisonResDto> comparePoll(@PathVariable Long id) {
+        return ResponseEntity.ok(pollComparisonService.compare(id));
+    }
+
+    @Operation(summary = "작성 중인 투표의 선택지 비교")
+    @PostMapping("/compare")
+    public ResponseEntity<PollComparisonResDto> compareDraft(
+            @Valid @RequestBody PollComparisonReqDto request
+    ) {
+        return ResponseEntity.ok(pollComparisonService.compare(request));
     }
 }
