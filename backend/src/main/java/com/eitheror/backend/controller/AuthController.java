@@ -28,6 +28,12 @@ public class AuthController {
         );
     }
 
+    @Operation(summary = "닉네임 중복 확인")
+    @GetMapping("/nickname/exists")
+    public ResponseEntity<Boolean> nicknameExists(@RequestParam String nickname) {
+        return ResponseEntity.ok(authService.nicknameExists(nickname));
+    }
+
     @Operation(summary = "회원가입", description = "회원가입을 합니다.")
     @PostMapping("/signup")
     public ResponseEntity<Boolean> signUp(@RequestBody SignUpRequestDto dto) {
